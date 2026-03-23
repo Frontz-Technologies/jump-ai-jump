@@ -133,26 +133,36 @@ async function run() {
     assert(false, `unexpected status ${genRes.status}: ${JSON.stringify(genRes.data)}`);
   }
 
+  const hasApiKey = genRes.status === 200;
+
   // 3. GET /api/logs should have the request
   console.log('\nTest 3: /api/logs has the request');
-  const logsAfter = await fetchJSON('/api/logs');
-  assert(logsAfter.data.length >= 1, 'at least 1 log entry');
+  if (hasApiKey) {
+    const logsAfter = await fetchJSON('/api/logs');
+    assert(logsAfter.data.length >= 1, 'at least 1 log entry');
+  } else {
+    console.log('  SKIP: No API key — no log entry expected');
+  }
 
   // 4. Check log file
   console.log('\nTest 4: logs/llm.jsonl written');
-  const logFile = path.join(ROOT, 'logs', 'llm.jsonl');
-  const fileExists = fs.existsSync(logFile);
-  assert(fileExists, 'log file exists');
-  if (fileExists) {
-    const content = fs.readFileSync(logFile, 'utf-8').trim();
-    const lines = content.split('\n').filter((l) => l.trim());
-    assert(lines.length >= 1, 'at least 1 line in log file');
-    try {
-      const entry = JSON.parse(lines[lines.length - 1]);
-      assert(entry.timestamp && entry.stage != null, 'log entry has timestamp and stage');
-    } catch {
-      assert(false, 'log entry is valid JSON');
+  if (hasApiKey) {
+    const logFile = path.join(ROOT, 'logs', 'llm.jsonl');
+    const fileExists = fs.existsSync(logFile);
+    assert(fileExists, 'log file exists');
+    if (fileExists) {
+      const content = fs.readFileSync(logFile, 'utf-8').trim();
+      const lines = content.split('\n').filter((l) => l.trim());
+      assert(lines.length >= 1, 'at least 1 line in log file');
+      try {
+        const entry = JSON.parse(lines[lines.length - 1]);
+        assert(entry.timestamp && entry.stage != null, 'log entry has timestamp and stage');
+      } catch {
+        assert(false, 'log entry is valid JSON');
+      }
     }
+  } else {
+    console.log('  SKIP: No API key — no log file expected');
   }
 
   // 5. POST/GET /api/state
