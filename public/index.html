@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Planetary Jumper</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/modals.css">
+</head>
+<body>
+  <div id="game-container">
+    <canvas id="game-canvas"></canvas>
+
+    <!-- HUD overlay -->
+    <div id="hud">
+      <div id="hud-left">
+        <button id="btn-stats" class="icon-btn" title="Stats">&#127942;</button>
+      </div>
+      <div id="hud-center">
+        <span id="stage-label">Earth</span>
+        <span id="jump-count">10</span>
+        <span id="jump-label">platforms left</span>
+        <div id="ai-indicator" class="ai-indicator">
+          <span class="ai-dot"></span>
+          <span class="ai-text">AI</span>
+        </div>
+      </div>
+      <div id="hud-right">
+        <button id="btn-ai" class="icon-btn" title="Connect AI">&#129302;</button>
+        <button id="btn-settings" class="icon-btn" title="Settings">&#9881;</button>
+      </div>
+    </div>
+
+    <div id="hud-bottom">
+      <span id="planet-name">Earth</span>
+      <span class="bottom-sep">|</span>
+      <span id="gravity-value">g = 9.81 m/s²</span>
+      <span class="bottom-sep">|</span>
+      <span id="atmo-indicator"><span class="atmo-dot atmo-dense"></span> <span class="atmo-label">Dense</span></span>
+      <span class="bottom-sep" id="wind-sep">|</span>
+      <span id="wind-indicator"><span id="wind-arrow">→</span> <span id="wind-value">Calm</span></span>
+    </div>
+
+    <!-- Name prompt (first time only) -->
+    <div id="name-prompt" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>What's your name?</h3>
+        </div>
+        <div class="modal-body">
+          <p class="name-prompt-desc">This will appear on leaderboards.</p>
+          <input type="text" id="name-prompt-input" class="setting-input" maxlength="20" placeholder="Enter your name" autofocus>
+          <button id="name-prompt-ok" class="primary-btn name-prompt-btn">Continue</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Planet info overlay (shown on stage transitions) -->
+    <div id="planet-info" class="overlay hidden planet-info-overlay">
+      <div class="overlay-content">
+        <h2 id="planet-info-name"></h2>
+        <p id="planet-info-gravity"></p>
+        <p id="planet-info-atmo"></p>
+        <p id="planet-info-desc"></p>
+      </div>
+    </div>
+
+    <!-- Menu screen -->
+    <div id="menu-screen" class="overlay">
+      <div class="overlay-content">
+        <h1>Planetary Jumper</h1>
+        <p class="subtitle">Hold to charge. Release to jump.<br>A new journey every day.</p>
+        <div id="daily-challenge" class="daily-challenge hidden">
+          <span class="daily-label">Today's Galaxy</span>
+          <span id="daily-galaxy-name" class="daily-name"></span>
+          <span id="daily-galaxy-meta" class="daily-meta"></span>
+        </div>
+        <p class="menu-taunt" id="menu-taunt">Past level 2, your reflexes won't be enough.<br>Will you bring the right tools?</p>
+        <button id="btn-start" class="primary-btn">Play</button>
+        <div class="menu-footer">
+          <button id="menu-leaderboard" class="text-btn">Leaderboard</button>
+          <button id="menu-settings" class="text-btn">Settings</button>
+          <button id="menu-stats" class="text-btn">Stats</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Game Over screen -->
+    <div id="gameover-screen" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Game Over</h2>
+        <p id="gameover-message">You fell!</p>
+        <p id="gameover-score"></p>
+        <button id="btn-checkpoint" class="primary-btn hidden">Continue from Checkpoint</button>
+        <button id="btn-retry" class="primary-btn">Restart</button>
+        <button id="btn-gameover-leaderboard" class="text-btn">Leaderboard</button>
+        <button id="btn-menu" class="text-btn">Menu</button>
+      </div>
+    </div>
+
+    <!-- Victory screen -->
+    <div id="victory-screen" class="overlay hidden">
+      <div class="overlay-content">
+        <h2>Mission Complete!</h2>
+        <p class="victory-tagline">You traversed the solar system.</p>
+        <p id="victory-score"></p>
+        <button id="btn-victory-leaderboard" class="text-btn">Leaderboard</button>
+        <button id="btn-victory-menu" class="primary-btn">Menu</button>
+      </div>
+    </div>
+
+    <!-- Leaderboard modal -->
+    <div id="leaderboard-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 id="leaderboard-title">Leaderboard</h3>
+          <button class="close-btn" data-close="leaderboard-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="lb-tabs">
+            <button id="lb-tab-current" class="lb-tab active">Current</button>
+            <button id="lb-tab-history" class="lb-tab">History</button>
+            <button id="lb-tab-alltime" class="lb-tab">All Time</button>
+            <button id="lb-tab-tourist" class="lb-tab">Tourist Runs</button>
+          </div>
+          <div id="leaderboard-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Settings</h3>
+          <button class="close-btn" data-close="settings-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="setting-row">
+            <label class="setting-label" for="setting-name">Player Name</label>
+            <input type="text" id="setting-name" class="setting-input" maxlength="20" placeholder="Anonymous">
+          </div>
+          <label class="toggle-row">
+            <span>Sound</span>
+            <input type="checkbox" id="setting-sound" checked>
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="toggle-row">
+            <span>Dark Mode</span>
+            <input type="checkbox" id="setting-darkmode">
+            <span class="toggle-slider"></span>
+          </label>
+          <label class="toggle-row" id="tourist-toggle-row">
+            <span>Human Tourist <small style="opacity:0.6">easier + planet checkpoints</small></span>
+            <input type="checkbox" id="setting-tourist">
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats modal -->
+    <div id="stats-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Stats & Trophies</h3>
+          <button class="close-btn" data-close="stats-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div id="stats-summary">
+            <div class="stat-item">
+              <span class="stat-value" id="stat-games">0</span>
+              <span class="stat-label">Games</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-jumps">0</span>
+              <span class="stat-label">Jumps</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-best-stage">0</span>
+              <span class="stat-label">Best Stage</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-value" id="stat-best">0</span>
+              <span class="stat-label">Best Platform</span>
+            </div>
+          </div>
+          <h4>Trophies</h4>
+          <div id="trophy-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- MCP Connect modal -->
+    <div id="mcp-modal" class="modal hidden">
+      <div class="modal-backdrop"></div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>Connect AI</h3>
+          <button class="close-btn" data-close="mcp-modal">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="mcp-status" id="mcp-status">
+            <span class="mcp-status-dot mcp-waiting"></span>
+            <span class="mcp-status-text">Waiting for connection...</span>
+          </div>
+          <div class="mcp-session-id" id="mcp-session-display"></div>
+          <p class="mcp-instructions">Run this command in your terminal:</p>
+          <div class="mcp-command-box">
+            <code id="mcp-command-text"></code>
+            <button id="mcp-copy-btn" class="mcp-copy-btn" title="Copy">&#128203;</button>
+          </div>
+          <p class="mcp-hint">Then tell Claude: "Play the jump game"</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,20 @@
+# Dependencies
+node_modules/
+
+# Environment / secrets
+.env
+
+# Runtime data
+data/galaxies/*.json
+data/leaderboards/*.json
+logs/
+
+# Claude Code local config
+.claude/
+
+# MCP local session config
+.mcp.json
+
+# OS files
+Thumbs.db
+.DS_Store

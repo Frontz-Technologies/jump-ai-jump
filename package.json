@@ -1,0 +1,20 @@
+{
+  "name": "jump-ai-jump",
+  "version": "0.5.0",
+  "description": "A web-based platformer with AI-generated galaxies and MCP integration for AI agents",
+  "license": "MIT",
+  "author": "John Frontz <john@frontz.tech>",
+  "keywords": ["game", "platformer", "ai", "mcp", "openrouter", "procedural-generation"],
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/llm-smoke.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "dotenv": "^16.4.0",
+    "express": "^4.21.0",
+    "express-rate-limit": "^8.3.1",
+    "helmet": "^8.1.0",
+    "ws": "^8.16.0"
+  }
+}

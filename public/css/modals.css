@@ -1,0 +1,575 @@
+/* ─── Modal base ─── */
+
+.modal {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+  animation: fadeIn 0.15s ease;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: 12px;
+  width: 92%;
+  max-width: 440px;
+  overflow: hidden;
+}
+
+/* ─── Modal header ─── */
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.modal-header h3 {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+/* ─── Close button — thin CSS-drawn X ─── */
+
+.close-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  font-size: 0;
+  color: transparent;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.close-btn::before,
+.close-btn::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 12px;
+  height: 1.5px;
+  background: var(--text-muted, var(--muted));
+  border-radius: 1px;
+  transition: background 0.15s;
+}
+
+.close-btn::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.close-btn::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
+}
+
+.close-btn:hover {
+  background: var(--primary-subtle, rgba(78, 205, 196, 0.08));
+}
+
+.close-btn:hover::before,
+.close-btn:hover::after {
+  background: var(--text);
+}
+
+/* ─── Modal body ─── */
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-body h4 {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text-muted, var(--muted));
+  margin-bottom: 12px;
+}
+
+/* ─── Settings input ─── */
+
+.setting-row {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.setting-label {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted, var(--muted));
+  margin-bottom: 6px;
+}
+
+.setting-input {
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.setting-input:focus {
+  border-color: var(--primary);
+}
+
+.setting-input::placeholder {
+  color: var(--text-muted, var(--muted));
+}
+
+/* ─── Name prompt ─── */
+
+.name-prompt-desc {
+  font-size: 13px;
+  color: var(--text-muted, var(--muted));
+  margin-bottom: 16px;
+}
+
+.name-prompt-btn {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+}
+
+/* ─── Toggle rows (Settings) ─── */
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 0;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 400;
+}
+
+.toggle-row + .toggle-row {
+  border-top: 1px solid var(--line);
+}
+
+.toggle-row input[type="checkbox"] {
+  display: none;
+}
+
+.toggle-slider {
+  width: 40px;
+  height: 22px;
+  background: var(--meter-bg);
+  border-radius: 11px;
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.toggle-slider::after {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--surface);
+  top: 2px;
+  left: 2px;
+  transition: transform 0.2s;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.toggle-row input:checked + .toggle-slider {
+  background: var(--primary);
+}
+
+.toggle-row input:checked + .toggle-slider::after {
+  transform: translateX(18px);
+}
+
+/* ─── Stats ─── */
+
+#stats-summary {
+  display: flex;
+  margin-bottom: 24px;
+}
+
+.stat-item {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+}
+
+/* Thin vertical line dividers between stats */
+.stat-item + .stat-item {
+  border-left: 1px solid var(--line);
+}
+
+.stat-value {
+  display: block;
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--primary);
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+}
+
+.stat-label {
+  display: block;
+  font-size: 9px;
+  font-weight: 500;
+  color: var(--text-muted, var(--muted));
+  margin-top: 6px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+}
+
+/* ─── Trophy list ─── */
+
+#trophy-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.trophy-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 0;
+  font-size: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.trophy-item:last-child {
+  border-bottom: none;
+}
+
+.trophy-item.locked {
+  opacity: 0.35;
+}
+
+.trophy-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trophy-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.trophy-name {
+  font-weight: 500;
+  font-size: 13px;
+  display: block;
+  letter-spacing: 0.2px;
+}
+
+.trophy-desc {
+  font-size: 12px;
+  color: var(--text-muted, var(--muted));
+  line-height: 1.4;
+  margin-top: 1px;
+}
+
+/* ─── Leaderboard ─── */
+
+.lb-tabs {
+  display: flex;
+  margin-bottom: 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+.lb-tab {
+  flex: 1;
+  padding: 10px 0;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-muted, var(--muted));
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: color 0.15s, border-color 0.15s;
+  margin-bottom: -1px;
+}
+
+.lb-tab:hover {
+  color: var(--text);
+}
+
+.lb-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+#leaderboard-list {
+  max-height: 340px;
+  overflow-y: auto;
+}
+
+/* ─── Leaderboard table ─── */
+
+.lb-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.lb-row {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 12px;
+}
+
+.lb-row:last-child {
+  border-bottom: none;
+}
+
+.lb-row.lb-header {
+  border-bottom: 1px solid var(--line);
+  padding: 4px 0 8px;
+}
+
+.lb-row.lb-header .lb-col {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted, var(--muted));
+}
+
+/* Top 3 — accent color on rank */
+.lb-row.lb-top .lb-col-rank {
+  color: var(--accent);
+}
+
+.lb-col {
+  font-variant-numeric: tabular-nums;
+}
+
+.lb-col-rank {
+  width: 24px;
+  flex-shrink: 0;
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--text-muted, var(--muted));
+}
+
+.lb-col-name {
+  flex: 1 1 0;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 400;
+  padding-right: 8px;
+}
+
+.lb-col-galaxy {
+  flex: 1 1 0;
+  font-size: 11px;
+  color: var(--text-muted, var(--muted));
+  padding-right: 8px;
+  min-width: 0;
+  word-break: break-word;
+}
+
+.lb-col-stage {
+  flex: 0 0 36px;
+  text-align: right;
+  font-weight: 500;
+  color: var(--primary);
+  padding-right: 8px;
+}
+
+.lb-col-date {
+  flex: 0 0 72px;
+  text-align: right;
+  font-size: 10px;
+  color: var(--text-muted, var(--muted));
+  letter-spacing: 0.2px;
+}
+
+.lb-loading, .lb-empty {
+  text-align: center;
+  color: var(--text-muted, var(--muted));
+  padding: 32px 0;
+  font-size: 12px;
+  letter-spacing: 0.3px;
+}
+
+.lb-empty-sm {
+  padding: 12px 0;
+  font-size: 11px;
+}
+
+/* ─── Leaderboard history — galaxy sections ─── */
+
+.lb-galaxy-section {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.lb-galaxy-section:last-child {
+  border-bottom: none;
+}
+
+.lb-galaxy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 8px;
+}
+
+.lb-galaxy-name {
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.lb-galaxy-date {
+  font-size: 10px;
+  color: var(--text-muted, var(--muted));
+  letter-spacing: 0.2px;
+}
+
+.lb-table-sm .lb-row {
+  padding: 5px 0;
+  font-size: 11px;
+}
+
+.lb-table-sm .lb-col-rank {
+  width: 20px;
+  font-size: 10px;
+}
+
+.lb-table-sm .lb-col-stage {
+  flex: 0 0 32px;
+  font-size: 11px;
+}
+
+/* ─── MCP Connect modal ─── */
+
+.mcp-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.mcp-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.mcp-status-dot.mcp-waiting {
+  background: var(--accent, #f9a825);
+  animation: mcpPulse 1.5s ease-in-out infinite;
+}
+
+.mcp-status-dot.mcp-connected {
+  background: #4caf50;
+}
+
+.mcp-status-dot.mcp-disconnected {
+  background: var(--text-muted, var(--muted));
+}
+
+@keyframes mcpPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.mcp-session-id {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-align: center;
+  color: var(--primary);
+  padding: 12px 0;
+  font-family: monospace;
+}
+
+.mcp-instructions {
+  font-size: 12px;
+  color: var(--text-muted, var(--muted));
+  margin-bottom: 8px;
+}
+
+.mcp-command-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+}
+
+.mcp-command-box code {
+  flex: 1;
+  font-size: 11px;
+  font-family: monospace;
+  word-break: break-all;
+  color: var(--text);
+  line-height: 1.4;
+}
+
+.mcp-copy-btn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+  border-radius: 4px;
+  flex-shrink: 0;
+  transition: background 0.15s;
+}
+
+.mcp-copy-btn:hover {
+  background: var(--primary-subtle, rgba(78, 205, 196, 0.08));
+}
+
+.mcp-hint {
+  font-size: 11px;
+  color: var(--text-muted, var(--muted));
+  text-align: center;
+  font-style: italic;
+}

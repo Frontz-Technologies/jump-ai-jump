@@ -1,0 +1,426 @@
+.debug-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 340px;
+  height: 100vh;
+  background: #12121f;
+  color: #c8c8d4;
+  font-family: 'SF Mono', 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: -1px 0 0 rgba(255,255,255,0.06), -8px 0 32px rgba(0,0,0,0.6);
+  overflow: hidden;
+  letter-spacing: 0.01em;
+}
+
+.debug-panel.hidden {
+  display: none;
+}
+
+/* --- Header --- */
+.debug-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: #0e0e1a;
+  flex-shrink: 0;
+}
+
+.debug-header h3 {
+  margin: 0;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: #5a5a72;
+}
+
+.debug-close {
+  background: none;
+  border: none;
+  color: #3a3a52;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 1;
+  border-radius: 4px;
+  transition: color 0.15s, background 0.15s;
+}
+.debug-close:hover {
+  color: #c8c8d4;
+  background: rgba(255,255,255,0.06);
+}
+
+/* --- Tabs --- */
+.debug-tabs {
+  display: flex;
+  background: #0e0e1a;
+  flex-shrink: 0;
+  padding: 0 12px;
+  gap: 4px;
+}
+
+.debug-tab {
+  flex: 1;
+  padding: 8px 0 6px;
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: #4a4a62;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  transition: color 0.15s, border-color 0.15s;
+}
+.debug-tab:hover {
+  color: #8888a0;
+}
+.debug-tab.active {
+  color: #c8c8d4;
+  border-bottom-color: #6366f1;
+}
+
+/* --- Content --- */
+.debug-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: #2a2a3e transparent;
+}
+.debug-content::-webkit-scrollbar { width: 4px; }
+.debug-content::-webkit-scrollbar-track { background: transparent; }
+.debug-content::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 2px; }
+
+/* --- Section labels --- */
+.debug-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: #3e3e56;
+  margin: 12px 0 6px;
+  padding: 0;
+}
+.debug-section-label:first-child {
+  margin-top: 0;
+}
+
+/* --- Log Stream --- */
+.debug-filters {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+
+.debug-filter-btn {
+  padding: 3px 10px;
+  border: 1px solid transparent;
+  border-radius: 100px;
+  background: #1a1a2c;
+  color: #5a5a72;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.debug-filter-btn:hover {
+  color: #8888a0;
+  background: #1e1e32;
+}
+.debug-filter-btn.active {
+  background: rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.3);
+  color: #818cf8;
+}
+
+.debug-log-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.debug-log-entry {
+  padding: 4px 8px;
+  border-radius: 4px;
+  background: rgba(255,255,255,0.02);
+  font-size: 10px;
+  line-height: 1.5;
+  cursor: pointer;
+  word-break: break-word;
+  transition: background 0.1s;
+}
+.debug-log-entry:hover { background: rgba(255,255,255,0.05); }
+
+.debug-log-entry .log-time {
+  color: #3a3a52;
+  margin-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.debug-log-entry .log-cat {
+  font-weight: 600;
+  margin-right: 4px;
+}
+.debug-log-entry.cat-llm .log-cat { color: #818cf8; }
+.debug-log-entry.cat-stage .log-cat { color: #f59e0b; }
+.debug-log-entry.cat-player .log-cat { color: #34d399; }
+.debug-log-entry.cat-game .log-cat { color: #a78bfa; }
+
+.debug-log-detail {
+  margin-top: 6px;
+  padding: 8px;
+  background: #0e0e1a;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.04);
+  font-size: 10px;
+  white-space: pre-wrap;
+  color: #6a6a82;
+  max-height: 200px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+/* --- LLM Dashboard --- */
+.debug-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.debug-stat {
+  background: rgba(255,255,255,0.02);
+  padding: 10px 8px 8px;
+  border-radius: 6px;
+  text-align: center;
+}
+.debug-stat .label {
+  color: #4a4a62;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  display: block;
+  margin-bottom: 4px;
+}
+.debug-stat .value {
+  color: #c8c8d4;
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.debug-request-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+
+.debug-request {
+  background: rgba(255,255,255,0.02);
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+.debug-request:hover { background: rgba(255,255,255,0.05); }
+.debug-request .req-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.debug-request .req-stage {
+  color: #818cf8;
+  font-weight: 600;
+}
+.debug-request .req-latency {
+  color: #f59e0b;
+  font-variant-numeric: tabular-nums;
+}
+.debug-request .req-error {
+  color: #ef4444;
+  font-weight: 600;
+}
+.debug-request .req-model {
+  color: #3a3a52;
+  font-size: 10px;
+  margin-top: 2px;
+}
+
+/* --- Stage Inspector --- */
+.debug-stage-select {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.debug-stage-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.02);
+  color: #5a5a72;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.15s;
+}
+.debug-stage-btn:hover {
+  background: rgba(255,255,255,0.05);
+  color: #8888a0;
+}
+.debug-stage-btn.active {
+  border-color: #6366f1;
+  color: #c8c8d4;
+  background: rgba(99, 102, 241, 0.12);
+}
+.debug-stage-btn.llm {
+  border-color: rgba(129, 140, 248, 0.4);
+}
+
+.debug-config-compare {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.debug-config-col {
+  background: rgba(255,255,255,0.02);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.debug-config-col h4 {
+  margin: 0 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4a4a62;
+}
+.debug-config-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 10px;
+  color: #6a6a82;
+}
+.debug-config-row span:last-child {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: #8888a0;
+}
+.debug-config-row.diff span:last-child {
+  color: #f59e0b;
+}
+
+.debug-metrics-box {
+  background: rgba(255,255,255,0.02);
+  padding: 8px 10px;
+  border-radius: 6px;
+}
+.debug-metrics-box h4 {
+  margin: 0 0 6px;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #4a4a62;
+}
+.debug-metrics-box .no-data {
+  color: #3a3a52;
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* --- Dev Controls --- */
+.debug-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.debug-control-group {
+  background: rgba(255,255,255,0.02);
+  padding: 10px;
+  border-radius: 6px;
+}
+.debug-control-group label {
+  display: block;
+  color: #4a4a62;
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.debug-btn-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.debug-btn {
+  padding: 5px 12px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 5px;
+  background: rgba(255,255,255,0.03);
+  color: #8888a0;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+  transition: all 0.12s;
+}
+.debug-btn:hover {
+  background: rgba(255,255,255,0.07);
+  color: #c8c8d4;
+  border-color: rgba(255,255,255,0.12);
+}
+.debug-btn:active {
+  transform: scale(0.97);
+}
+.debug-btn.active {
+  border-color: rgba(52, 211, 153, 0.4);
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.08);
+}
+.debug-btn.danger {
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
+}
+.debug-btn.danger:hover {
+  background: rgba(239, 68, 68, 0.12);
+  border-color: rgba(239, 68, 68, 0.5);
+  color: #fca5a5;
+}
+
+/* --- Scroll toggle --- */
+.debug-scroll-toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  color: #4a4a62;
+  margin-bottom: 8px;
+}
+.debug-scroll-toggle input[type="checkbox"] {
+  margin: 0;
+  accent-color: #6366f1;
+}
