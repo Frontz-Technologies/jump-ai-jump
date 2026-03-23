@@ -24,7 +24,9 @@ export class Analytics {
 
     // Notify listeners
     for (const fn of this._listeners) {
-      try { fn(event); } catch (_) {}
+      try {
+        fn(event);
+      } catch {}
     }
 
     // Echo to console
@@ -41,23 +43,22 @@ export class Analytics {
 
   getEvents(category) {
     if (!category) return [...this._events];
-    return this._events.filter(e => e.category === category);
+    return this._events.filter((e) => e.category === category);
   }
 
   getSessionSummary() {
-    const llmEvents = this._events.filter(e => e.category === 'llm');
-    const requests = llmEvents.filter(e => e.type === 'request-sent');
-    const okResponses = llmEvents.filter(e => e.type === 'response-ok');
-    const errors = llmEvents.filter(e => e.type === 'response-error');
-    const applied = llmEvents.filter(e => e.type === 'config-applied');
+    const llmEvents = this._events.filter((e) => e.category === 'llm');
+    const requests = llmEvents.filter((e) => e.type === 'request-sent');
+    const okResponses = llmEvents.filter((e) => e.type === 'response-ok');
+    const errors = llmEvents.filter((e) => e.type === 'response-error');
+    const applied = llmEvents.filter((e) => e.type === 'config-applied');
 
-    const latencies = okResponses
-      .map(e => e.data.latencyMs)
-      .filter(v => typeof v === 'number');
+    const latencies = okResponses.map((e) => e.data.latencyMs).filter((v) => typeof v === 'number');
 
-    const avgLatency = latencies.length > 0
-      ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
-      : 0;
+    const avgLatency =
+      latencies.length > 0
+        ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length)
+        : 0;
 
     return {
       totalRequests: requests.length,
@@ -70,10 +71,14 @@ export class Analytics {
   }
 
   exportJSON() {
-    return JSON.stringify({
-      summary: this.getSessionSummary(),
-      events: this._events,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        summary: this.getSessionSummary(),
+        events: this._events,
+      },
+      null,
+      2,
+    );
   }
 
   startPeriodicPush() {
@@ -101,6 +106,6 @@ export class Analytics {
           recentEvents: this._events.slice(-50),
         }),
       });
-    } catch (_) {}
+    } catch {}
   }
 }

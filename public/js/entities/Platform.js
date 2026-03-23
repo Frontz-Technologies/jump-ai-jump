@@ -11,7 +11,7 @@ export class Platform {
     this.definitionY = y;
     this.width = width;
     this.height = height;
-    this.surfaceFriction = null;  // null = use planet default
+    this.surfaceFriction = null; // null = use planet default
     // Spawn animation: starts negative (above), eases to 0
     this.animOffset = -80;
   }

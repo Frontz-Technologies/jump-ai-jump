@@ -2,22 +2,22 @@ import { ThemeBase } from './ThemeBase.js';
 
 /** Pool of curated color palettes — shuffled at game start, 10 picked per run. */
 const PALETTE_POOL = [
-  { bg: '#e6e0f0', platform: '#6b8f71', stroke: '#5a7d60' },   // lavender + green
-  { bg: '#f5f0e1', platform: '#7b6b8f', stroke: '#6a5a7d' },   // cream + purple
-  { bg: '#1a1a3e', platform: '#4a90d9', stroke: '#3a7bc8' },   // dark navy + bright blue
-  { bg: '#2a1a3e', platform: '#d97ab5', stroke: '#c06aa0' },   // deep purple + pink
-  { bg: '#1a2e1a', platform: '#8fd98a', stroke: '#70b86c' },   // dark green + light green
-  { bg: '#f5e0d0', platform: '#c27a5a', stroke: '#a8654a' },   // peach + terracotta
-  { bg: '#d8eaf5', platform: '#4a8db5', stroke: '#3a7ca0' },   // light blue + ocean
-  { bg: '#2a1e14', platform: '#e8943a', stroke: '#c87e2e' },   // dark brown + orange
-  { bg: '#f5f2e8', platform: '#8a9a5a', stroke: '#728040' },   // warm white + olive
-  { bg: '#0e2a2a', platform: '#3ad9d0', stroke: '#2ab8b0' },   // dark teal + bright teal
-  { bg: '#f0e0f0', platform: '#9a5ab5', stroke: '#8048a0' },   // pink-lavender + violet
-  { bg: '#f0ebe5', platform: '#b85a4a', stroke: '#a04838' },   // off-white + clay red
-  { bg: '#2a2e1a', platform: '#d9d04a', stroke: '#b8b03a' },   // dark olive + yellow
-  { bg: '#daf0e0', platform: '#4a9a6a', stroke: '#3a8058' },   // mint + sea green
-  { bg: '#14142e', platform: '#a898d0', stroke: '#8a7ab8' },   // midnight + lavender
-  { bg: '#2e1e14', platform: '#d4a84a', stroke: '#b89038' },   // dark brown + gold
+  { bg: '#e6e0f0', platform: '#6b8f71', stroke: '#5a7d60' }, // lavender + green
+  { bg: '#f5f0e1', platform: '#7b6b8f', stroke: '#6a5a7d' }, // cream + purple
+  { bg: '#1a1a3e', platform: '#4a90d9', stroke: '#3a7bc8' }, // dark navy + bright blue
+  { bg: '#2a1a3e', platform: '#d97ab5', stroke: '#c06aa0' }, // deep purple + pink
+  { bg: '#1a2e1a', platform: '#8fd98a', stroke: '#70b86c' }, // dark green + light green
+  { bg: '#f5e0d0', platform: '#c27a5a', stroke: '#a8654a' }, // peach + terracotta
+  { bg: '#d8eaf5', platform: '#4a8db5', stroke: '#3a7ca0' }, // light blue + ocean
+  { bg: '#2a1e14', platform: '#e8943a', stroke: '#c87e2e' }, // dark brown + orange
+  { bg: '#f5f2e8', platform: '#8a9a5a', stroke: '#728040' }, // warm white + olive
+  { bg: '#0e2a2a', platform: '#3ad9d0', stroke: '#2ab8b0' }, // dark teal + bright teal
+  { bg: '#f0e0f0', platform: '#9a5ab5', stroke: '#8048a0' }, // pink-lavender + violet
+  { bg: '#f0ebe5', platform: '#b85a4a', stroke: '#a04838' }, // off-white + clay red
+  { bg: '#2a2e1a', platform: '#d9d04a', stroke: '#b8b03a' }, // dark olive + yellow
+  { bg: '#daf0e0', platform: '#4a9a6a', stroke: '#3a8058' }, // mint + sea green
+  { bg: '#14142e', platform: '#a898d0', stroke: '#8a7ab8' }, // midnight + lavender
+  { bg: '#2e1e14', platform: '#d4a84a', stroke: '#b89038' }, // dark brown + gold
 ];
 
 const PLATFORMS_PER_STAGE = 10;
@@ -91,7 +91,7 @@ export class BasicTheme extends ThemeBase {
     }
   }
 
-  drawPlatform(ctx, platform, index, totalPlatforms) {
+  drawPlatform(ctx, platform, index, _totalPlatforms) {
     const stage = Math.floor(index / PLATFORMS_PER_STAGE);
     const palette = this.stagePalettes
       ? this.stagePalettes[Math.min(stage, this.stagePalettes.length - 1)]
@@ -182,8 +182,10 @@ export class BasicTheme extends ThemeBase {
     const lines = this._wrapText(ctx, text, maxLineWidth);
     const lineHeight = 14;
     const padding = 12;
-    const bubbleWidth = Math.min(maxLineWidth + padding * 2,
-      Math.max(...lines.map(l => ctx.measureText(l).width)) + padding * 2 + 8);
+    const bubbleWidth = Math.min(
+      maxLineWidth + padding * 2,
+      Math.max(...lines.map((l) => ctx.measureText(l).width)) + padding * 2 + 8,
+    );
     const bubbleHeight = lines.length * lineHeight + padding * 2 - 4;
     const bubbleY = character.y - 40 - bubbleHeight;
     const bx = cx - bubbleWidth / 2;

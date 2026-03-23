@@ -29,7 +29,9 @@ export class UIManager {
     document.getElementById('btn-victory-menu').addEventListener('click', callbacks.onMenu);
     document.getElementById('btn-settings').addEventListener('click', callbacks.onGameSettingsOpen);
     document.getElementById('btn-stats').addEventListener('click', callbacks.onStatsOpen);
-    document.getElementById('menu-settings').addEventListener('click', callbacks.onMenuSettingsOpen);
+    document
+      .getElementById('menu-settings')
+      .addEventListener('click', callbacks.onMenuSettingsOpen);
     document.getElementById('menu-stats').addEventListener('click', callbacks.onStatsOpen);
     if (this.checkpointBtn) {
       this.checkpointBtn.addEventListener('click', callbacks.onContinueCheckpoint);
@@ -75,7 +77,9 @@ export class UIManager {
         if (text) {
           navigator.clipboard.writeText(text).then(() => {
             copyBtn.textContent = '\u2713';
-            setTimeout(() => { copyBtn.textContent = '\u{1F4CB}'; }, 1500);
+            setTimeout(() => {
+              copyBtn.textContent = '\u{1F4CB}';
+            }, 1500);
           });
         }
       });
@@ -150,16 +154,16 @@ export class UIManager {
   }
 
   showScreen(name) {
-    Object.values(this.screens).forEach(s => s.classList.add('hidden'));
+    Object.values(this.screens).forEach((s) => s.classList.add('hidden'));
     if (this.screens[name]) {
       this.screens[name].classList.remove('hidden');
     }
-    this.hud.style.display = name === null ? 'flex' : (name === 'menu' ? 'none' : 'flex');
+    this.hud.style.display = name === null ? 'flex' : name === 'menu' ? 'none' : 'flex';
   }
 
   /** Hide all overlays — show game. */
   showGame() {
-    Object.values(this.screens).forEach(s => s.classList.add('hidden'));
+    Object.values(this.screens).forEach((s) => s.classList.add('hidden'));
     this.hud.style.display = 'flex';
   }
 

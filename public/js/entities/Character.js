@@ -126,8 +126,8 @@ export class Character {
       } else {
         // Lerp back to normal
         const t = this._animTimer / 0.15;
-        this.scaleX = 1 + (0.3 * t);
-        this.scaleY = 1 - (0.3 * t);
+        this.scaleX = 1 + 0.3 * t;
+        this.scaleY = 1 - 0.3 * t;
       }
     }
   }

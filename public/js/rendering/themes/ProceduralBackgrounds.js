@@ -243,9 +243,13 @@ function drawEarthLike(ctx, w, h, planet, seed) {
   for (let i = 0; i < 3; i++) {
     ctx.beginPath();
     ctx.ellipse(
-      rng() * w, h * (0.08 + rng() * 0.2),
-      60 + rng() * 50, 15 + rng() * 12,
-      rng() * 0.3, 0, Math.PI * 2
+      rng() * w,
+      h * (0.08 + rng() * 0.2),
+      60 + rng() * 50,
+      15 + rng() * 12,
+      rng() * 0.3,
+      0,
+      Math.PI * 2,
     );
     ctx.fill();
   }
@@ -260,7 +264,10 @@ function drawBarren(ctx, w, h, planet, seed) {
   const grad = ctx.createLinearGradient(0, 0, 0, h);
   grad.addColorStop(0, lerpColor(planet.skyColor || '#8b4513', '#000000', 0.3));
   grad.addColorStop(0.4, planet.skyColor || '#8b4513');
-  grad.addColorStop(0.8, lerpColor(planet.skyColor || '#8b4513', planet.groundColor || '#6b3410', 0.5));
+  grad.addColorStop(
+    0.8,
+    lerpColor(planet.skyColor || '#8b4513', planet.groundColor || '#6b3410', 0.5),
+  );
   grad.addColorStop(1, planet.groundColor || '#6b3410');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, w, h);

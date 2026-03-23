@@ -106,8 +106,11 @@ export class Narrator {
       this._currentStage = stageIndex;
     }
     this._fire('death', {
-      platform: platformIndex, stage: stageIndex, planet: planetName,
-      totalDeaths: this._deaths, deathsThisStage: this._deathsOnStage,
+      platform: platformIndex,
+      stage: stageIndex,
+      planet: planetName,
+      totalDeaths: this._deaths,
+      deathsThisStage: this._deathsOnStage,
       jumpsBeforeDeath: this._jumps,
     });
   }
@@ -117,8 +120,10 @@ export class Narrator {
     this._jumps++;
     if (this._jumps % 5 === 0 && Math.random() < 0.4) {
       this._fire('progress', {
-        platform: platformIndex, stage: stageIndex,
-        totalJumps: this._jumps, deaths: this._deaths,
+        platform: platformIndex,
+        stage: stageIndex,
+        totalJumps: this._jumps,
+        deaths: this._deaths,
       });
     }
   }
@@ -127,7 +132,8 @@ export class Narrator {
     this._deathsOnStage = 0;
     this._currentStage = stageIndex;
     this._fire('stage_complete', {
-      completedStage: stageIndex, planet: planetName,
+      completedStage: stageIndex,
+      planet: planetName,
       totalDeaths: this._deaths,
     });
   }
@@ -139,7 +145,8 @@ export class Narrator {
     this._idleTriggered = false;
     if (this._gamesPlayed > 1) {
       this._fire('retry', {
-        attempt: this._gamesPlayed, previousDeaths: this._deaths,
+        attempt: this._gamesPlayed,
+        previousDeaths: this._deaths,
       });
     }
     this._deaths = 0;
@@ -148,7 +155,8 @@ export class Narrator {
 
   onVictory(stageIndex) {
     this._fire('victory', {
-      finalStage: stageIndex, totalDeaths: this._deaths,
+      finalStage: stageIndex,
+      totalDeaths: this._deaths,
       totalJumps: this._jumps,
     });
   }
@@ -174,10 +182,11 @@ export class Narrator {
     if (!pool || pool.length === 0) return null;
 
     // Try to pick one we haven't used recently
-    const unused = pool.filter(l => !this._usedLines.has(l));
-    const pick = unused.length > 0
-      ? unused[Math.floor(Math.random() * unused.length)]
-      : pool[Math.floor(Math.random() * pool.length)];
+    const unused = pool.filter((l) => !this._usedLines.has(l));
+    const pick =
+      unused.length > 0
+        ? unused[Math.floor(Math.random() * unused.length)]
+        : pool[Math.floor(Math.random() * pool.length)];
 
     this._usedLines.add(pick);
     if (this._usedLines.size > 20) {
@@ -187,7 +196,7 @@ export class Narrator {
     return pick;
   }
 
-  async _requestLLM(event, context) {
+  async _requestLLM(_event, _context) {
     // DEBUG: skip LLM request to avoid consuming tokens — fallback lines only
     this._pending = false;
   }

@@ -62,7 +62,16 @@ export class Renderer {
   draw(character, visiblePlatforms, options = {}) {
     if (!this.theme) return;
     const { ctx } = this;
-    const { thoughtBubble, characterThought, bgTransition, aiEye, planetIndex, ghosts, planet, sliding } = options;
+    const {
+      thoughtBubble,
+      characterThought,
+      bgTransition,
+      aiEye,
+      planetIndex,
+      ghosts,
+      planet,
+      sliding,
+    } = options;
     const canvas = { width: this.displayWidth, height: this.displayHeight };
 
     ctx.clearRect(0, 0, this.displayWidth, this.displayHeight);
@@ -73,8 +82,12 @@ export class Renderer {
     // AI eye indicator (screen-space, behind all game objects)
     if (aiEye) {
       this.eyeIndicator.update(
-        aiEye.dt, aiEye.charScreenX, aiEye.charScreenY,
-        aiEye.active, this.displayWidth, this.displayHeight
+        aiEye.dt,
+        aiEye.charScreenX,
+        aiEye.charScreenY,
+        aiEye.active,
+        this.displayWidth,
+        this.displayHeight,
       );
       this.eyeIndicator.draw(ctx, this.displayWidth, this.displayHeight, aiEye.irisColor);
     }
@@ -113,7 +126,11 @@ export class Renderer {
     ctx.restore();
 
     // Atmosphere post-processing overlay for dense-atmosphere planets
-    const atmoPlanet = planet || (planetIndex != null ? PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)] : null);
+    const atmoPlanet =
+      planet ||
+      (planetIndex != null
+        ? PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)]
+        : null);
     if (atmoPlanet && atmoPlanet.airDensity >= 5.0) {
       // Tinted overlay for dense atmosphere bodies
       let tintColor;

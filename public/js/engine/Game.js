@@ -11,7 +11,12 @@ import { StatsModal } from '../ui/StatsModal.js';
 import { Storage } from '../data/Storage.js';
 import { checkTrophies } from '../data/Trophies.js';
 import { AudioManager } from '../audio/AudioManager.js';
-import { PLANET_CONFIGS, PLATFORMS_PER_STAGE, TOTAL_PLATFORMS, makePlanetFromGalaxy } from '../data/PlanetConfig.js';
+import {
+  PLANET_CONFIGS,
+  PLATFORMS_PER_STAGE,
+  TOTAL_PLATFORMS as _TOTAL_PLATFORMS,
+  makePlanetFromGalaxy,
+} from '../data/PlanetConfig.js';
 import { DifficultyManager } from './DifficultyManager.js';
 import { GhostNetwork } from '../net/GhostNetwork.js';
 import { GalaxyClient } from '../net/GalaxyClient.js';
@@ -71,7 +76,15 @@ export class Game {
     this._visiblePlatforms = [];
 
     // Background transition state
-    this.bgTransition = { active: false, fromColor: '', toColor: '', originX: 0, originY: 0, progress: 0, duration: 0.6 };
+    this.bgTransition = {
+      active: false,
+      fromColor: '',
+      toColor: '',
+      originX: 0,
+      originY: 0,
+      progress: 0,
+      duration: 0.6,
+    };
 
     // Planet info pause timer
     this._planetInfoTimer = 0;
@@ -176,7 +189,8 @@ export class Game {
       onJumpStart: () => {
         if (this.state !== GameState.PLAYING) return;
         if (this._planetInfoTimer > 0) return; // paused for planet info
-        if (this.character.state !== CharState.IDLE && this.character.state !== CharState.SLIDING) return;
+        if (this.character.state !== CharState.IDLE && this.character.state !== CharState.SLIDING)
+          return;
         this.character.cancelSlide();
         this.character.startCharge();
         this.audio.playCharge();
@@ -235,7 +249,9 @@ export class Game {
           el.classList.remove('hidden');
         }
       }
-    } catch {}
+    } catch {
+      /* intentionally empty */
+    }
   }
 
   _showMenu() {
@@ -261,9 +277,10 @@ export class Game {
       if (galaxyIdx < this._galaxyPlanets.length) {
         planet = this._galaxyPlanets[galaxyIdx];
       } else {
-        planet = this._galaxyPlanets.length > 0
-          ? this._galaxyPlanets[this._galaxyPlanets.length - 1]
-          : PLANET_CONFIGS[PLANET_CONFIGS.length - 1];
+        planet =
+          this._galaxyPlanets.length > 0
+            ? this._galaxyPlanets[this._galaxyPlanets.length - 1]
+            : PLANET_CONFIGS[PLANET_CONFIGS.length - 1];
         if (!this._galaxyPlanets.length) isDefault = true;
       }
     }
@@ -285,7 +302,7 @@ export class Game {
     this._galaxyMode = !!(galaxy && galaxy.planets && galaxy.planets.length > 0);
 
     if (this._galaxyMode) {
-      this._galaxyPlanets = galaxy.planets.map(p => makePlanetFromGalaxy(p));
+      this._galaxyPlanets = galaxy.planets.map((p) => makePlanetFromGalaxy(p));
       this._totalStages = 2 + this._galaxyPlanets.length;
       this.ghostNet.setGalaxyId(galaxy.galaxyId);
     } else {
@@ -300,7 +317,15 @@ export class Game {
     this._nextPlatformX = 80;
     this._nextPlatformY = 0; // will be set after displayHeight is known
     this.currentPlanet = this._getPlanetForStage(0);
-    this.bgTransition = { active: false, fromColor: '', toColor: '', originX: 0, originY: 0, progress: 0, duration: 0.6 };
+    this.bgTransition = {
+      active: false,
+      fromColor: '',
+      toColor: '',
+      originX: 0,
+      originY: 0,
+      progress: 0,
+      duration: 0.6,
+    };
     this._planetInfoTimer = 0;
 
     // Cache Human Tourist mode at game start
@@ -337,10 +362,7 @@ export class Game {
 
     // Create character on first platform
     const start = this.platforms[0];
-    this.character = new Character(
-      start.x + start.width / 2 - 20,
-      start.y - 40
-    );
+    this.character = new Character(start.x + start.width / 2 - 20, start.y - 40);
 
     // Reset thought bubble state
     this._thoughtBubbleTimer = 0;
@@ -378,7 +400,10 @@ export class Game {
     });
 
     if (this._analytics) {
-      this._analytics.log('game', 'start', { galaxyMode: this._galaxyMode, totalStages: this._totalStages });
+      this._analytics.log('game', 'start', {
+        galaxyMode: this._galaxyMode,
+        totalStages: this._totalStages,
+      });
     }
   }
 
@@ -396,13 +421,20 @@ export class Game {
   _generatePlatforms(count) {
     for (let i = 0; i < count; i++) {
       const globalIndex = this.platforms.length;
-      const stageIdx = Math.min(Math.floor(globalIndex / PLATFORMS_PER_STAGE), this._totalStages - 1);
+      const stageIdx = Math.min(
+        Math.floor(globalIndex / PLATFORMS_PER_STAGE),
+        this._totalStages - 1,
+      );
       const platformInStage = globalIndex % PLATFORMS_PER_STAGE;
 
       if (stageIdx !== this._lastLoggedGenStage) {
         const source = this.difficulty.getConfigSource(stageIdx);
         if (this._analytics) {
-          this._analytics.log('game', 'generate', { stageIndex: stageIdx, stageNumber: stageIdx + 1, source });
+          this._analytics.log('game', 'generate', {
+            stageIndex: stageIdx,
+            stageNumber: stageIdx + 1,
+            source,
+          });
         }
         this._lastLoggedGenStage = stageIdx;
       }
@@ -440,7 +472,7 @@ export class Game {
 
   _ensurePlatformsAhead() {
     // Keep at least 10 platforms ahead of the current one
-    const needed = (this.currentPlatformIndex + 15) - this.platforms.length;
+    const needed = this.currentPlatformIndex + 15 - this.platforms.length;
     if (needed > 0) {
       this._generatePlatforms(needed);
       // Y positions are set in _generatePlatforms; animOffset is -80 from constructor
@@ -514,7 +546,10 @@ export class Game {
         yR = pSpec.yOffset === 0 ? 0 : (Math.random() - 0.5) * 2 * pSpec.yOffset;
       } else {
         const pCfg = this.difficulty.getStageConfig(pStageIdx);
-        gap = this._clampGap(pCfg.minGap + Math.random() * (pCfg.maxGap - pCfg.minGap), this.platforms[i].width);
+        gap = this._clampGap(
+          pCfg.minGap + Math.random() * (pCfg.maxGap - pCfg.minGap),
+          this.platforms[i].width,
+        );
         rise = pCfg.minRise + Math.random() * (pCfg.maxRise - pCfg.minRise);
         yR = pCfg.yOffset === 0 ? 0 : (Math.random() - 0.5) * 2 * pCfg.yOffset;
       }
@@ -528,7 +563,10 @@ export class Game {
     // Update _nextPlatformX and _nextPlatformY
     if (this.platforms.length > 0) {
       const last = this.platforms[this.platforms.length - 1];
-      const lastStageIdx = Math.min(Math.floor((this.platforms.length - 1) / PLATFORMS_PER_STAGE), this._totalStages - 1);
+      const lastStageIdx = Math.min(
+        Math.floor((this.platforms.length - 1) / PLATFORMS_PER_STAGE),
+        this._totalStages - 1,
+      );
       const lastInStage = (this.platforms.length - 1) % PLATFORMS_PER_STAGE;
       const lastSpec = this.difficulty.getPlatformSpec(lastStageIdx, lastInStage);
 
@@ -699,7 +737,8 @@ export class Game {
       for (const i of landTargets) {
         if (i >= this.platforms.length) continue;
         if (checkLanding(char, this.platforms[i], prevY)) {
-          const friction = this.platforms[i].surfaceFriction ?? this.currentPlanet.surfaceFriction ?? 1.0;
+          const friction =
+            this.platforms[i].surfaceFriction ?? this.currentPlanet.surfaceFriction ?? 1.0;
           char.landOn(this.platforms[i], friction);
           const prevStage = this.stageIndex;
           this.currentPlatformIndex = i;
@@ -715,7 +754,10 @@ export class Game {
           });
 
           if (this._analytics) {
-            this._analytics.log('player', 'land', { platformIndex: i, stageIndex: this.stageIndex });
+            this._analytics.log('player', 'land', {
+              platformIndex: i,
+              stageIndex: this.stageIndex,
+            });
           }
 
           // Character thoughts: landing
@@ -764,7 +806,10 @@ export class Game {
             });
 
             // Start background transition (fade through black)
-            const newPalette = this.theme.stagePalettes[Math.min(this.stageIndex, this.theme.stagePalettes.length - 1)];
+            const newPalette =
+              this.theme.stagePalettes[
+                Math.min(this.stageIndex, this.theme.stagePalettes.length - 1)
+              ];
             this.bgTransition = {
               active: true,
               fromColor: this.theme.getCurrentBg(),
@@ -827,7 +872,14 @@ export class Game {
     this.hud.setAIThinking(this.difficulty.isLLMPending());
 
     // Character thoughts idle tracking
-    const charStateName = char.state === CharState.IDLE ? 'IDLE' : char.state === CharState.CHARGING ? 'CHARGING' : char.state === CharState.SLIDING ? 'SLIDING' : 'AIRBORNE';
+    const charStateName =
+      char.state === CharState.IDLE
+        ? 'IDLE'
+        : char.state === CharState.CHARGING
+          ? 'CHARGING'
+          : char.state === CharState.SLIDING
+            ? 'SLIDING'
+            : 'AIRBORNE';
     this.thoughts.update(dt, charStateName);
 
     // Camera follow
@@ -841,15 +893,22 @@ export class Game {
     const nextPlat = this.platforms[this.currentPlatformIndex + 1] || null;
     if (currentPlat) {
       this.ghostNet.sendPosition(
-        this.stageIndex, char,
-        currentPlat, this.currentPlatformIndex,
-        nextPlat, this.currentPlatformIndex + 1
+        this.stageIndex,
+        char,
+        currentPlat,
+        this.currentPlatformIndex,
+        nextPlat,
+        this.currentPlatformIndex + 1,
       );
     }
     this.ghostNet.updateInterpolation(dt);
 
     // Check if a ghost is nearby — trigger character thought
-    const ghosts = this.ghostNet.getGhosts(this.stageIndex, this.platforms, this.currentPlatformIndex);
+    const ghosts = this.ghostNet.getGhosts(
+      this.stageIndex,
+      this.platforms,
+      this.currentPlatformIndex,
+    );
     if (ghosts && ghosts.length > 0 && char.state === CharState.IDLE) {
       this.thoughts.onGhostNearby(ghosts.length);
     }
@@ -860,14 +919,12 @@ export class Game {
       this.renderer.draw(
         { x: 0, y: 0, width: 0, height: 0, vx: 0, vy: 0, scaleX: 1, scaleY: 1 },
         [],
-        { thoughtBubble: false }
+        { thoughtBubble: false },
       );
       return;
     }
 
-    const power = this.character.state === CharState.CHARGING
-      ? this.input.getCurrentPower()
-      : 0;
+    const power = this.character.state === CharState.CHARGING ? this.input.getCurrentPower() : 0;
 
     // Compute AI eye indicator state
     const char = this.character;
@@ -876,11 +933,14 @@ export class Game {
       : null;
 
     // Build sliding info for visual effects
-    const slidingInfo = char.state === CharState.SLIDING ? {
-      active: true,
-      friction: this.currentPlanet.surfaceFriction ?? 1.0,
-      slideVx: char._slideVx,
-    } : null;
+    const slidingInfo =
+      char.state === CharState.SLIDING
+        ? {
+            active: true,
+            friction: this.currentPlanet.surfaceFriction ?? 1.0,
+            slideVx: char._slideVx,
+          }
+        : null;
 
     this.renderer.draw(char, this._visiblePlatforms, {
       thoughtBubble: char.state === CharState.THOUGHT_BUBBLE,
@@ -893,8 +953,8 @@ export class Game {
       ghosts: this.ghostNet.getGhosts(this.stageIndex, this.platforms, this.currentPlatformIndex),
       aiEye: {
         active: this.difficulty.isLLMPending(),
-        charScreenX: (char.x + char.width / 2) - this.renderer.cameraX,
-        charScreenY: (char.y + char.height / 2) - this.renderer.cameraY,
+        charScreenX: char.x + char.width / 2 - this.renderer.cameraX,
+        charScreenY: char.y + char.height / 2 - this.renderer.cameraY,
         irisColor: palette ? palette.platform : '#6b8f71',
         dt: this._dt || 0,
       },
@@ -918,7 +978,7 @@ export class Game {
     if (el) el.classList.add('hidden');
   }
 
-  _gameOver(message) {
+  _gameOver(_message) {
     const planet = this.currentPlanet;
     const cause = 'fell';
     this.difficulty.recordDeath({
@@ -947,7 +1007,7 @@ export class Game {
       `You fell on ${planet.name}!`,
       this.currentPlatformIndex + 1,
       this.stageIndex + 1,
-      this._isHumanTourist && this._checkpoint != null
+      this._isHumanTourist && this._checkpoint != null,
     );
     this._submitScore();
   }
@@ -1099,10 +1159,7 @@ export class Game {
     // Place character on current platform
     const plat = this.platforms[this.currentPlatformIndex];
     if (plat) {
-      this.character = new Character(
-        plat.x + plat.width / 2 - 20,
-        plat.y - 40
-      );
+      this.character = new Character(plat.x + plat.width / 2 - 20, plat.y - 40);
     }
 
     // Update HUD and camera
@@ -1115,7 +1172,8 @@ export class Game {
     this.renderer.cameraY = this.renderer.cameraTargetY;
 
     // Apply theme palette for target stage
-    const newPalette = this.theme.stagePalettes[Math.min(this.stageIndex, this.theme.stagePalettes.length - 1)];
+    const newPalette =
+      this.theme.stagePalettes[Math.min(this.stageIndex, this.theme.stagePalettes.length - 1)];
     if (newPalette) {
       this.theme.setCurrentBg(newPalette.bg);
       this.hud.adaptToBackground(newPalette.bg);
@@ -1137,7 +1195,11 @@ export class Game {
 
   startAutoPlay() {
     this._autoPlay = true;
-    if (this.state === GameState.PLAYING && this.character && this.character.state === CharState.IDLE) {
+    if (
+      this.state === GameState.PLAYING &&
+      this.character &&
+      this.character.state === CharState.IDLE
+    ) {
       this._scheduleAutoJump();
     }
   }
@@ -1198,7 +1260,10 @@ export class Game {
 
     for (let p = 0.05; p <= 1.0; p += 0.005) {
       const vel = powerToVelocity(p, planet);
-      let sx = 0, sy = 0, svx = vel.vx, svy = vel.vy;
+      let sx = 0,
+        sy = 0,
+        svx = vel.vx,
+        svy = vel.vy;
 
       let landed = false;
       for (let t = 0; t < 5.0; t += simDt) {

@@ -22,10 +22,14 @@ export class LeaderboardModal {
     const backdrop = this._modal.querySelector('.modal-backdrop');
     if (backdrop) backdrop.addEventListener('click', () => this.close());
 
-    if (this._tabCurrent) this._tabCurrent.addEventListener('click', () => this._switchTab('current'));
-    if (this._tabHistory) this._tabHistory.addEventListener('click', () => this._switchTab('history'));
-    if (this._tabAllTime) this._tabAllTime.addEventListener('click', () => this._switchTab('alltime'));
-    if (this._tabTourist) this._tabTourist.addEventListener('click', () => this._switchTab('tourist'));
+    if (this._tabCurrent)
+      this._tabCurrent.addEventListener('click', () => this._switchTab('current'));
+    if (this._tabHistory)
+      this._tabHistory.addEventListener('click', () => this._switchTab('history'));
+    if (this._tabAllTime)
+      this._tabAllTime.addEventListener('click', () => this._switchTab('alltime'));
+    if (this._tabTourist)
+      this._tabTourist.addEventListener('click', () => this._switchTab('tourist'));
   }
 
   open(galaxyId) {
@@ -74,13 +78,17 @@ export class LeaderboardModal {
         <span class="lb-col lb-col-date">Date</span>
       </div>`;
 
-    html += entries.map((e, i) => `
+    html += entries
+      .map(
+        (e, i) => `
       <div class="lb-row${i < 3 ? ' lb-top' : ''}">
         <span class="lb-col lb-col-rank">${i + 1}</span>
         <span class="lb-col lb-col-name">${this._esc(e.playerName)}</span>
         <span class="lb-col lb-col-stage">${e.highestStage}</span>
         <span class="lb-col lb-col-date">${this._fmtDate(e.submittedAt)}</span>
-      </div>`).join('');
+      </div>`,
+      )
+      .join('');
 
     html += '</div>';
     this._list.innerHTML = html;
@@ -113,12 +121,16 @@ export class LeaderboardModal {
         html += '<p class="lb-empty lb-empty-sm">No scores</p>';
       } else {
         html += '<div class="lb-table lb-table-sm">';
-        html += entries.map((e, i) => `
+        html += entries
+          .map(
+            (e, i) => `
           <div class="lb-row${i < 3 ? ' lb-top' : ''}">
             <span class="lb-col lb-col-rank">${i + 1}</span>
             <span class="lb-col lb-col-name">${this._esc(e.playerName)}</span>
             <span class="lb-col lb-col-stage">${e.highestStage}</span>
-          </div>`).join('');
+          </div>`,
+          )
+          .join('');
         html += '</div>';
       }
 
@@ -133,7 +145,11 @@ export class LeaderboardModal {
   }
 
   async _loadTourist() {
-    await this._loadRankedTable('Tourist Runs', () => this._client.fetchTourist(), 'No tourist scores yet');
+    await this._loadRankedTable(
+      'Tourist Runs',
+      () => this._client.fetchTourist(),
+      'No tourist scores yet',
+    );
   }
 
   async _loadRankedTable(title, fetchFn, emptyMsg) {
@@ -157,14 +173,18 @@ export class LeaderboardModal {
         <span class="lb-col lb-col-date">Date</span>
       </div>`;
 
-    html += entries.map((e, i) => `
+    html += entries
+      .map(
+        (e, i) => `
       <div class="lb-row${i < 3 ? ' lb-top' : ''}">
         <span class="lb-col lb-col-rank">${i + 1}</span>
         <span class="lb-col lb-col-name">${this._esc(e.playerName)}</span>
         <span class="lb-col lb-col-galaxy">${this._esc(e.galaxyName)}</span>
         <span class="lb-col lb-col-stage">${e.highestStage}</span>
         <span class="lb-col lb-col-date">${this._fmtDate(e.date)}</span>
-      </div>`).join('');
+      </div>`,
+      )
+      .join('');
 
     html += '</div>';
     this._list.innerHTML = html;

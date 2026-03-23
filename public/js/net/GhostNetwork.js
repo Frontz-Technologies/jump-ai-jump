@@ -48,17 +48,28 @@ export class GhostNetwork {
       this._sendInterval = setInterval(() => this._flush(), 50);
     };
     this._ws.onmessage = (event) => {
-      try { this._handleMessage(JSON.parse(event.data)); } catch (e) {}
+      try {
+        this._handleMessage(JSON.parse(event.data));
+      } catch {}
     };
-    this._ws.onclose = () => { this._cleanup(); this._attemptReconnect(); };
+    this._ws.onclose = () => {
+      this._cleanup();
+      this._attemptReconnect();
+    };
     this._ws.onerror = () => {};
   }
 
   _handleMessage(msg) {
     switch (msg.type) {
-      case 'welcome': this._id = msg.id; break;
-      case 'positions': this._updateGhosts(msg.players); break;
-      case 'leave': this._ghosts.delete(msg.id); break;
+      case 'welcome':
+        this._id = msg.id;
+        break;
+      case 'positions':
+        this._updateGhosts(msg.players);
+        break;
+      case 'leave':
+        this._ghosts.delete(msg.id);
+        break;
     }
   }
 
@@ -78,13 +89,18 @@ export class GhostNetwork {
         airborne: p.airborne,
         platformIndex: p.platformIndex,
         // idle fields
-        ox: p.ox, oy: p.oy,
+        ox: p.ox,
+        oy: p.oy,
         // airborne fields
-        fromIndex: p.fromIndex, toIndex: p.toIndex,
-        t: p.t, yN: p.yN,
+        fromIndex: p.fromIndex,
+        toIndex: p.toIndex,
+        t: p.t,
+        yN: p.yN,
         // shared
-        vx: p.vx, vy: p.vy,
-        scaleX: p.scaleX, scaleY: p.scaleY,
+        vx: p.vx,
+        vy: p.vy,
+        scaleX: p.scaleX,
+        scaleY: p.scaleY,
         state: p.state,
       };
       if (existing) {
@@ -101,7 +117,8 @@ export class GhostNetwork {
       } else {
         const ghost = {
           ...newData,
-          x: 0, y: 0,
+          x: 0,
+          y: 0,
           hue: this._hueFromId(p.id),
           lastUpdate: now,
           interpT: 1,
@@ -121,22 +138,34 @@ export class GhostNetwork {
   }
 
   disconnect() {
-    if (this._reconnectTimer) { clearTimeout(this._reconnectTimer); this._reconnectTimer = null; }
+    if (this._reconnectTimer) {
+      clearTimeout(this._reconnectTimer);
+      this._reconnectTimer = null;
+    }
     this._reconnectAttempts = this._maxReconnectAttempts;
-    if (this._ws) { this._ws.onclose = null; this._ws.close(); }
+    if (this._ws) {
+      this._ws.onclose = null;
+      this._ws.close();
+    }
     this._cleanup();
   }
 
   _cleanup() {
     this._connected = false;
-    if (this._sendInterval) { clearInterval(this._sendInterval); this._sendInterval = null; }
+    if (this._sendInterval) {
+      clearInterval(this._sendInterval);
+      this._sendInterval = null;
+    }
     this._ws = null;
   }
 
   _attemptReconnect() {
     if (this._reconnectAttempts >= this._maxReconnectAttempts) return;
     this._reconnectAttempts++;
-    this._reconnectTimer = setTimeout(() => { this._reconnectTimer = null; this._openSocket(); }, 3000);
+    this._reconnectTimer = setTimeout(() => {
+      this._reconnectTimer = null;
+      this._openSocket();
+    }, 3000);
   }
 
   /**
@@ -176,12 +205,26 @@ export class GhostNetwork {
       const baselineY = fromY + (toY - fromY) * t; // linear baseline
       const yN = dy !== 0 ? (charY - baselineY) / Math.abs(dy) : (charY - baselineY) / 100;
 
-      this._pendingPos = { ...base, airborne: true, fromIndex, toIndex, t, yN, platformIndex: fromIndex };
+      this._pendingPos = {
+        ...base,
+        airborne: true,
+        fromIndex,
+        toIndex,
+        t,
+        yN,
+        platformIndex: fromIndex,
+      };
     } else {
       // Idle/charging: offset from current platform center
       const platCx = fromPlatform.x + fromPlatform.width / 2;
       const platY = fromPlatform.y;
-      this._pendingPos = { ...base, airborne: false, platformIndex: fromIndex, ox: character.x - platCx, oy: character.y - platY };
+      this._pendingPos = {
+        ...base,
+        airborne: false,
+        platformIndex: fromIndex,
+        ox: character.x - platCx,
+        oy: character.y - platY,
+      };
     }
   }
 
@@ -199,8 +242,14 @@ export class GhostNetwork {
     const now = performance.now();
     const result = [];
     for (const [id, g] of this._ghosts) {
-      if (now - g.lastUpdate > this._staleThreshold) { this._ghosts.delete(id); continue; }
-      if (g.platformIndex < currentPlatformIndex - 1) { this._ghosts.delete(id); continue; }
+      if (now - g.lastUpdate > this._staleThreshold) {
+        this._ghosts.delete(id);
+        continue;
+      }
+      if (g.platformIndex < currentPlatformIndex - 1) {
+        this._ghosts.delete(id);
+        continue;
+      }
 
       if (g.airborne) {
         const from = platforms[g.fromIndex];

@@ -5,7 +5,8 @@ export class LLMClient {
 
   async requestDifficulty(llmInput) {
     const startTime = performance.now();
-    const stageLabel = llmInput.completedStage != null ? ` for stage ${llmInput.completedStage + 2}` : '';
+    const _stageLabel =
+      llmInput.completedStage != null ? ` for stage ${llmInput.completedStage + 2}` : '';
 
     if (this._analytics) {
       this._analytics.log('llm', 'request-sent', {

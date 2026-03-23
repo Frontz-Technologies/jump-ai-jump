@@ -38,7 +38,7 @@ export class StatsModal {
     this.bestEl.textContent = stats.bestPlatform;
 
     const unlocked = this.storage.getTrophies();
-    this.trophyListEl.innerHTML = TROPHIES.map(t => {
+    this.trophyListEl.innerHTML = TROPHIES.map((t) => {
       const isUnlocked = unlocked.includes(t.id);
       return `
         <div class="trophy-item ${isUnlocked ? '' : 'locked'}">

@@ -63,7 +63,7 @@ export class Input {
     this._startHold();
   }
 
-  _handleMouseUp(e) {
+  _handleMouseUp(_e) {
     this._endHold();
   }
 
@@ -79,7 +79,7 @@ export class Input {
     this._startHold();
   }
 
-  _handleTouchEnd(e) {
+  _handleTouchEnd(_e) {
     this._endHold();
   }
 

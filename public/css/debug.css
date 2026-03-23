@@ -11,7 +11,9 @@
   z-index: 10000;
   display: flex;
   flex-direction: column;
-  box-shadow: -1px 0 0 rgba(255,255,255,0.06), -8px 0 32px rgba(0,0,0,0.6);
+  box-shadow:
+    -1px 0 0 rgba(255, 255, 255, 0.06),
+    -8px 0 32px rgba(0, 0, 0, 0.6);
   overflow: hidden;
   letter-spacing: 0.01em;
 }
@@ -48,11 +50,13 @@
   padding: 4px;
   line-height: 1;
   border-radius: 4px;
-  transition: color 0.15s, background 0.15s;
+  transition:
+    color 0.15s,
+    background 0.15s;
 }
 .debug-close:hover {
   color: #c8c8d4;
-  background: rgba(255,255,255,0.06);
+  background: rgba(255, 255, 255, 0.06);
 }
 
 /* --- Tabs --- */
@@ -78,7 +82,9 @@
   cursor: pointer;
   font-family: inherit;
   text-align: center;
-  transition: color 0.15s, border-color 0.15s;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
 }
 .debug-tab:hover {
   color: #8888a0;
@@ -96,9 +102,16 @@
   scrollbar-width: thin;
   scrollbar-color: #2a2a3e transparent;
 }
-.debug-content::-webkit-scrollbar { width: 4px; }
-.debug-content::-webkit-scrollbar-track { background: transparent; }
-.debug-content::-webkit-scrollbar-thumb { background: #2a2a3e; border-radius: 2px; }
+.debug-content::-webkit-scrollbar {
+  width: 4px;
+}
+.debug-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+.debug-content::-webkit-scrollbar-thumb {
+  background: #2a2a3e;
+  border-radius: 2px;
+}
 
 /* --- Section labels --- */
 .debug-section-label {
@@ -154,14 +167,16 @@
 .debug-log-entry {
   padding: 4px 8px;
   border-radius: 4px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   font-size: 10px;
   line-height: 1.5;
   cursor: pointer;
   word-break: break-word;
   transition: background 0.1s;
 }
-.debug-log-entry:hover { background: rgba(255,255,255,0.05); }
+.debug-log-entry:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 
 .debug-log-entry .log-time {
   color: #3a3a52;
@@ -172,17 +187,25 @@
   font-weight: 600;
   margin-right: 4px;
 }
-.debug-log-entry.cat-llm .log-cat { color: #818cf8; }
-.debug-log-entry.cat-stage .log-cat { color: #f59e0b; }
-.debug-log-entry.cat-player .log-cat { color: #34d399; }
-.debug-log-entry.cat-game .log-cat { color: #a78bfa; }
+.debug-log-entry.cat-llm .log-cat {
+  color: #818cf8;
+}
+.debug-log-entry.cat-stage .log-cat {
+  color: #f59e0b;
+}
+.debug-log-entry.cat-player .log-cat {
+  color: #34d399;
+}
+.debug-log-entry.cat-game .log-cat {
+  color: #a78bfa;
+}
 
 .debug-log-detail {
   margin-top: 6px;
   padding: 8px;
   background: #0e0e1a;
   border-radius: 4px;
-  border: 1px solid rgba(255,255,255,0.04);
+  border: 1px solid rgba(255, 255, 255, 0.04);
   font-size: 10px;
   white-space: pre-wrap;
   color: #6a6a82;
@@ -200,7 +223,7 @@
 }
 
 .debug-stat {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 10px 8px 8px;
   border-radius: 6px;
   text-align: center;
@@ -230,13 +253,15 @@
 }
 
 .debug-request {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 10px;
   border-radius: 6px;
   cursor: pointer;
   transition: background 0.1s;
 }
-.debug-request:hover { background: rgba(255,255,255,0.05); }
+.debug-request:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
 .debug-request .req-header {
   display: flex;
   justify-content: space-between;
@@ -270,9 +295,9 @@
 .debug-stage-btn {
   width: 28px;
   height: 28px;
-  border: 1px solid rgba(255,255,255,0.06);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   border-radius: 6px;
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   color: #5a5a72;
   font-size: 11px;
   font-weight: 600;
@@ -281,7 +306,7 @@
   transition: all 0.15s;
 }
 .debug-stage-btn:hover {
-  background: rgba(255,255,255,0.05);
+  background: rgba(255, 255, 255, 0.05);
   color: #8888a0;
 }
 .debug-stage-btn.active {
@@ -301,7 +326,7 @@
 }
 
 .debug-config-col {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 10px;
   border-radius: 6px;
 }
@@ -330,7 +355,7 @@
 }
 
 .debug-metrics-box {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 8px 10px;
   border-radius: 6px;
 }
@@ -356,7 +381,7 @@
 }
 
 .debug-control-group {
-  background: rgba(255,255,255,0.02);
+  background: rgba(255, 255, 255, 0.02);
   padding: 10px;
   border-radius: 6px;
 }
@@ -378,9 +403,9 @@
 
 .debug-btn {
   padding: 5px 12px;
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 5px;
-  background: rgba(255,255,255,0.03);
+  background: rgba(255, 255, 255, 0.03);
   color: #8888a0;
   font-size: 10px;
   font-weight: 600;
@@ -389,9 +414,9 @@
   transition: all 0.12s;
 }
 .debug-btn:hover {
-  background: rgba(255,255,255,0.07);
+  background: rgba(255, 255, 255, 0.07);
   color: #c8c8d4;
-  border-color: rgba(255,255,255,0.12);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 .debug-btn:active {
   transform: scale(0.97);
@@ -420,7 +445,7 @@
   color: #4a4a62;
   margin-bottom: 8px;
 }
-.debug-scroll-toggle input[type="checkbox"] {
+.debug-scroll-toggle input[type='checkbox'] {
   margin: 0;
   accent-color: #6366f1;
 }

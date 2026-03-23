@@ -1,24 +1,27 @@
-import { PLANET_CONFIGS, PLATFORMS_PER_STAGE } from '../data/PlanetConfig.js';
+import {
+  PLANET_CONFIGS,
+  PLATFORMS_PER_STAGE as _PLATFORMS_PER_STAGE,
+} from '../data/PlanetConfig.js';
 import { LLMClient } from './LLMClient.js';
 
 const PLATFORM_BOUNDS = {
-  width:           [20, 250],
-  gap:             [60, 350],
-  rise:            [-30, 80],
-  yOffset:         [0, 60],
-  powerExponent:   [1.2, 4.0],
+  width: [20, 250],
+  gap: [60, 350],
+  rise: [-30, 80],
+  yOffset: [0, 60],
+  powerExponent: [1.2, 4.0],
   surfaceFriction: [0.15, 1.8],
 };
 
 // Legacy bounds for backward compatibility with old flat format
 const LEGACY_CONFIG_BOUNDS = {
-  minW:      [20, 200],
-  maxW:      [30, 250],
-  minGap:    [100, 350],
-  maxGap:    [150, 450],
-  yOffset:   [0, 60],
-  minRise:   [10, 60],
-  maxRise:   [20, 80],
+  minW: [20, 200],
+  maxW: [30, 250],
+  minGap: [100, 350],
+  maxGap: [150, 450],
+  yOffset: [0, 60],
+  minRise: [10, 60],
+  maxRise: [20, 80],
   powerExponent: [1.2, 4.0],
 };
 
@@ -35,7 +38,7 @@ export class DifficultyManager {
     this._activeRequest = null;
     this._llmAppliedStages = new Set();
     this._platformSpecs = new Map(); // stageIndex -> array of 10 per-platform specs
-    this._stageWinds = new Map();    // stageIndex -> wind speed (m/s)
+    this._stageWinds = new Map(); // stageIndex -> wind speed (m/s)
     this._onConfigApplied = null;
     this._galaxyMode = false;
     this._humanTourist = false;
@@ -63,8 +66,8 @@ export class DifficultyManager {
     const specs = this._platformSpecs.get(stageIndex);
     if (specs && specs.length > 0) {
       const avg = (key) => specs.reduce((s, p) => s + p[key], 0) / specs.length;
-      const min = (key) => Math.min(...specs.map(p => p[key]));
-      const max = (key) => Math.max(...specs.map(p => p[key]));
+      const min = (key) => Math.min(...specs.map((p) => p[key]));
+      const max = (key) => Math.max(...specs.map((p) => p[key]));
       cfg = {
         minW: min('width'),
         maxW: max('width'),
@@ -119,7 +122,7 @@ export class DifficultyManager {
     this._galaxyMode = false;
     this._totalStages = PLANET_CONFIGS.length;
     this._allPlanets = PLANET_CONFIGS;
-    this._configs = PLANET_CONFIGS.map(p => ({
+    this._configs = PLANET_CONFIGS.map((p) => ({
       minW: p.minW,
       maxW: p.maxW,
       minGap: p.minGap,
@@ -150,7 +153,7 @@ export class DifficultyManager {
     this._totalStages = totalStages;
     const tutorialPlanets = PLANET_CONFIGS.slice(0, 2);
     this._allPlanets = [...tutorialPlanets, ...galaxyPlanets];
-    this._configs = this._allPlanets.map(p => ({
+    this._configs = this._allPlanets.map((p) => ({
       minW: p.minW,
       maxW: p.maxW,
       minGap: p.minGap,
@@ -241,34 +244,35 @@ export class DifficultyManager {
     const m = this._currentJumpMetrics;
     if (!m) return;
 
-    const timeSpent = this._stageStartTime != null
-      ? (performance.now() - this._stageStartTime) / 1000
-      : 0;
+    const timeSpent =
+      this._stageStartTime != null ? (performance.now() - this._stageStartTime) / 1000 : 0;
 
-    const avgPower = m.jumpPowers.length > 0
-      ? m.jumpPowers.reduce((a, b) => a + b, 0) / m.jumpPowers.length
-      : 0;
+    const avgPower =
+      m.jumpPowers.length > 0 ? m.jumpPowers.reduce((a, b) => a + b, 0) / m.jumpPowers.length : 0;
 
-    const avgAccuracy = m.landingAccuracies.length > 0
-      ? m.landingAccuracies.reduce((a, b) => a + b, 0) / m.landingAccuracies.length
-      : 0;
+    const avgAccuracy =
+      m.landingAccuracies.length > 0
+        ? m.landingAccuracies.reduce((a, b) => a + b, 0) / m.landingAccuracies.length
+        : 0;
 
     let powerVariance = 0;
     if (m.jumpPowers.length > 1) {
       const mean = avgPower;
-      powerVariance = m.jumpPowers.reduce((sum, p) => sum + (p - mean) ** 2, 0) / m.jumpPowers.length;
+      powerVariance =
+        m.jumpPowers.reduce((sum, p) => sum + (p - mean) ** 2, 0) / m.jumpPowers.length;
     }
 
     // Derived: average jumps per platform
     const jppValues = Object.values(m.jumpsPerPlatform);
-    const avgJumpsPerPlatform = jppValues.length > 0
-      ? jppValues.reduce((a, b) => a + b, 0) / jppValues.length
-      : 0;
+    const avgJumpsPerPlatform =
+      jppValues.length > 0 ? jppValues.reduce((a, b) => a + b, 0) / jppValues.length : 0;
 
     // Derived: accuracy variance
     let accuracyVariance = 0;
     if (m.landingAccuracies.length > 1) {
-      accuracyVariance = m.landingAccuracies.reduce((sum, a) => sum + (a - avgAccuracy) ** 2, 0) / m.landingAccuracies.length;
+      accuracyVariance =
+        m.landingAccuracies.reduce((sum, a) => sum + (a - avgAccuracy) ** 2, 0) /
+        m.landingAccuracies.length;
     }
 
     // Derived: player profile
@@ -314,7 +318,7 @@ export class DifficultyManager {
   }
 
   getAllConfigs() {
-    return this._configs.map(c => ({ ...c }));
+    return this._configs.map((c) => ({ ...c }));
   }
 
   getPlatformSpecs(stageIndex) {
@@ -374,22 +378,22 @@ export class DifficultyManager {
     const m = this._currentJumpMetrics;
     if (!m) return null;
 
-    const timeSpent = this._stageStartTime != null
-      ? (performance.now() - this._stageStartTime) / 1000
-      : 0;
+    const timeSpent =
+      this._stageStartTime != null ? (performance.now() - this._stageStartTime) / 1000 : 0;
 
-    const avgPower = m.jumpPowers.length > 0
-      ? m.jumpPowers.reduce((a, b) => a + b, 0) / m.jumpPowers.length
-      : 0;
+    const avgPower =
+      m.jumpPowers.length > 0 ? m.jumpPowers.reduce((a, b) => a + b, 0) / m.jumpPowers.length : 0;
 
-    const avgAccuracy = m.landingAccuracies.length > 0
-      ? m.landingAccuracies.reduce((a, b) => a + b, 0) / m.landingAccuracies.length
-      : 0;
+    const avgAccuracy =
+      m.landingAccuracies.length > 0
+        ? m.landingAccuracies.reduce((a, b) => a + b, 0) / m.landingAccuracies.length
+        : 0;
 
     let powerVariance = 0;
     if (m.jumpPowers.length > 1) {
       const mean = avgPower;
-      powerVariance = m.jumpPowers.reduce((sum, p) => sum + (p - mean) ** 2, 0) / m.jumpPowers.length;
+      powerVariance =
+        m.jumpPowers.reduce((sum, p) => sum + (p - mean) ** 2, 0) / m.jumpPowers.length;
     }
 
     return {
@@ -463,7 +467,7 @@ export class DifficultyManager {
       if (config) {
         this.applyLLMOutput(nextStage, config);
       }
-    } catch (err) {
+    } catch {
       this._activeRequest.resolved = true;
     }
   }
@@ -495,7 +499,7 @@ export class DifficultyManager {
         if (config) {
           this.applyLLMOutput(nextStage, config);
         }
-      } catch (err) {
+      } catch {
         this._activeRequest.resolved = true;
       }
     })();
@@ -518,7 +522,7 @@ export class DifficultyManager {
 
     // New per-platform format: { platforms: [...] }
     if (newConfig.platforms && Array.isArray(newConfig.platforms)) {
-      const clampedSpecs = newConfig.platforms.map(spec => {
+      const clampedSpecs = newConfig.platforms.map((spec) => {
         const clamped = {};
         for (const key of Object.keys(PLATFORM_BOUNDS)) {
           const [min, max] = PLATFORM_BOUNDS[key];

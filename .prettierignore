@@ -1,0 +1,6 @@
+package-lock.json
+data/
+logs/
+node_modules/
+# HTML has structural issues that need separate fix
+public/index.html

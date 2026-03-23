@@ -5,7 +5,16 @@
 
 const crypto = require('crypto');
 
-const BODY_TYPES = ['rocky', 'volcanic', 'icy', 'gas_giant', 'hazy', 'earth_like', 'barren', 'exotic'];
+const BODY_TYPES = [
+  'rocky',
+  'volcanic',
+  'icy',
+  'gas_giant',
+  'hazy',
+  'earth_like',
+  'barren',
+  'exotic',
+];
 
 const GALAXY_PLANET_SCHEMA = {
   type: 'json_schema',
@@ -21,34 +30,49 @@ const GALAXY_PLANET_SCHEMA = {
           items: {
             type: 'object',
             properties: {
-              name:            { type: 'string' },
-              gReal:           { type: 'number' },
-              airDensity:      { type: 'number' },
-              bodyType:        { type: 'string' },
+              name: { type: 'string' },
+              gReal: { type: 'number' },
+              airDensity: { type: 'number' },
+              bodyType: { type: 'string' },
               atmosphereLabel: { type: 'string' },
-              description:     { type: 'string' },
-              skyColor:        { type: 'string' },
-              groundColor:     { type: 'string' },
-              platformColor:   { type: 'string' },
-              platformStroke:  { type: 'string' },
-              minW:            { type: 'number' },
-              maxW:            { type: 'number' },
-              minGap:          { type: 'number' },
-              maxGap:          { type: 'number' },
-              yOffset:         { type: 'number' },
-              minRise:         { type: 'number' },
-              maxRise:         { type: 'number' },
-              powerExponent:   { type: 'number' },
+              description: { type: 'string' },
+              skyColor: { type: 'string' },
+              groundColor: { type: 'string' },
+              platformColor: { type: 'string' },
+              platformStroke: { type: 'string' },
+              minW: { type: 'number' },
+              maxW: { type: 'number' },
+              minGap: { type: 'number' },
+              maxGap: { type: 'number' },
+              yOffset: { type: 'number' },
+              minRise: { type: 'number' },
+              maxRise: { type: 'number' },
+              powerExponent: { type: 'number' },
               surfaceFriction: { type: 'number' },
-              windMin:         { type: 'number' },   // minimum wind speed (m/s), 0 for no-atmosphere bodies
-              windMax:         { type: 'number' },   // maximum wind speed (m/s)
+              windMin: { type: 'number' }, // minimum wind speed (m/s), 0 for no-atmosphere bodies
+              windMax: { type: 'number' }, // maximum wind speed (m/s)
             },
             required: [
-              'name', 'gReal', 'airDensity', 'bodyType', 'atmosphereLabel',
-              'description', 'skyColor', 'groundColor', 'platformColor',
-              'platformStroke', 'minW', 'maxW', 'minGap', 'maxGap',
-              'yOffset', 'minRise', 'maxRise', 'powerExponent',
-              'windMin', 'windMax',
+              'name',
+              'gReal',
+              'airDensity',
+              'bodyType',
+              'atmosphereLabel',
+              'description',
+              'skyColor',
+              'groundColor',
+              'platformColor',
+              'platformStroke',
+              'minW',
+              'maxW',
+              'minGap',
+              'maxGap',
+              'yOffset',
+              'minRise',
+              'maxRise',
+              'powerExponent',
+              'windMin',
+              'windMax',
             ],
             additionalProperties: false,
           },
@@ -61,9 +85,10 @@ const GALAXY_PLANET_SCHEMA = {
 };
 
 function buildGalaxyPrompt(usedPlanetNames = []) {
-  const exclusionBlock = usedPlanetNames.length > 0
-    ? `\nALREADY USED IN PREVIOUS GALAXIES (DO NOT reuse any of these names):\n${usedPlanetNames.join(', ')}\n`
-    : '';
+  const exclusionBlock =
+    usedPlanetNames.length > 0
+      ? `\nALREADY USED IN PREVIOUS GALAXIES (DO NOT reuse any of these names):\n${usedPlanetNames.join(', ')}\n`
+      : '';
 
   return `You are a procedural universe designer for a browser platformer game called "Planetary Jumper".
 

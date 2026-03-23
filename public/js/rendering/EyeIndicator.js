@@ -4,15 +4,15 @@
  */
 export class EyeIndicator {
   constructor() {
-    this.alpha = 0;          // overall visibility (0-1)
-    this.openness = 0;       // eyelid openness (0=closed, 1=open)
-    this.pupilX = 0;         // current pupil offset X (relative to eye center)
-    this.pupilY = 0;         // current pupil offset Y
+    this.alpha = 0; // overall visibility (0-1)
+    this.openness = 0; // eyelid openness (0=closed, 1=open)
+    this.pupilX = 0; // current pupil offset X (relative to eye center)
+    this.pupilY = 0; // current pupil offset Y
     this._targetPupilX = 0;
     this._targetPupilY = 0;
     this._active = false;
-    this._wasActive = false;   // isActive from previous frame (for edge detection)
-    this._showTimer = 0;       // minimum display time remaining
+    this._wasActive = false; // isActive from previous frame (for edge detection)
+    this._showTimer = 0; // minimum display time remaining
     this._MIN_SHOW_TIME = 1.8; // seconds — eye stays open at least this long
     this._blinkTimer = this._nextBlinkDelay();
     this._blinkPhase = 'none'; // 'none' | 'closing' | 'opening'
@@ -73,7 +73,7 @@ export class EyeIndicator {
     // Pupil tracking toward character
     const eyeCenterX = canvasW / 2;
     const eyeCenterY = canvasH * 0.42;
-    const eyeH = canvasH * 0.30;
+    const eyeH = canvasH * 0.3;
     const irisRadius = eyeH * 0.35;
     const maxPupilOffset = irisRadius * 0.35;
 
@@ -131,7 +131,7 @@ export class EyeIndicator {
     const cx = w / 2;
     const cy = h * 0.42;
     const eyeW = w * 0.38;
-    const eyeH = h * 0.30;
+    const eyeH = h * 0.3;
     const irisR = eyeH * 0.35;
     const pupilR = irisR * 0.45;
 

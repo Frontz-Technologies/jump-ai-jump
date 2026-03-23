@@ -21,7 +21,7 @@
   --accent: #a78bfa;
 }
 
-[data-theme="dark"] {
+[data-theme='dark'] {
   --bg: #08081a;
   --text: #e2e4ec;
   --text-secondary: #8a8caa;
@@ -52,11 +52,16 @@
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  font-family:
+    'Segoe UI',
+    system-ui,
+    -apple-system,
+    sans-serif;
   background: var(--bg);
   color: var(--text);
   -webkit-tap-highlight-color: transparent;
@@ -157,9 +162,15 @@ html, body {
   border-radius: 50%;
 }
 
-.atmo-dot.atmo-dense { background: #4ecdc4; }
-.atmo-dot.atmo-thin { background: #f1c40f; }
-.atmo-dot.atmo-vacuum { background: #64748b; }
+.atmo-dot.atmo-dense {
+  background: #4ecdc4;
+}
+.atmo-dot.atmo-thin {
+  background: #f1c40f;
+}
+.atmo-dot.atmo-vacuum {
+  background: #64748b;
+}
 
 .atmo-label {
   font-size: 10px;
@@ -203,7 +214,9 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s, transform 0.1s;
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
   color: rgba(255, 255, 255, 0.7);
 }
 
@@ -248,10 +261,14 @@ html, body {
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 0.3; }
-  50% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 1;
+  }
 }
-
 
 /* ─── Bottom bar ─── */
 
@@ -458,8 +475,12 @@ html, body {
 }
 
 @keyframes planetInfoFadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─── Victory tagline ─── */
@@ -484,7 +505,9 @@ html, body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
 }
 
 .primary-btn:hover {
@@ -529,7 +552,8 @@ html, body {
   border-left: 1px solid var(--line);
 }
 
-#gameover-score, #complete-message {
+#gameover-score,
+#complete-message {
   color: var(--text-muted, var(--muted));
   margin-bottom: 24px;
   font-size: 14px;
@@ -549,8 +573,12 @@ html, body {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ─── Mobile ─── */
