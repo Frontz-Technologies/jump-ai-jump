@@ -741,9 +741,15 @@ export class Game {
         : this.difficulty.getSafePlanet(this.currentPlanet);
       applyPhysics(char, dt, physicsPlanet, wind);
 
-      // Check landing — only current platform (fallback) and next
-      const nextIdx = this.currentPlatformIndex + 1;
-      const landTargets = [this.currentPlatformIndex, nextIdx];
+      // Check landing — current platform and up to 3 ahead (handles low-gravity overshoots)
+      const landTargets = [];
+      for (
+        let i = this.currentPlatformIndex;
+        i <= Math.min(this.currentPlatformIndex + 3, this.platforms.length - 1);
+        i++
+      ) {
+        landTargets.push(i);
+      }
       for (const i of landTargets) {
         if (i >= this.platforms.length) continue;
         if (checkLanding(char, this.platforms[i], prevY)) {
@@ -875,6 +881,14 @@ export class Game {
       const currentPlat = this.platforms[this.currentPlatformIndex];
       if (currentPlat && char.y > currentPlat.y + 600) {
         this._gameOver(`You fell on ${this.currentPlanet.name}!`);
+        return;
+      }
+
+      // Check if overshot all reachable platforms horizontally
+      const maxAheadIdx = Math.min(this.currentPlatformIndex + 3, this.platforms.length - 1);
+      const aheadPlat = this.platforms[maxAheadIdx];
+      if (aheadPlat && char.x > aheadPlat.x + aheadPlat.width + 400) {
+        this._gameOver(`You overshot on ${this.currentPlanet.name}!`);
         return;
       }
     }
