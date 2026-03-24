@@ -319,6 +319,170 @@ body {
   font-weight: 300;
 }
 
+/* ─── Menu screen animated starfield ─── */
+
+#menu-screen {
+  position: absolute;
+  overflow: hidden;
+}
+
+#menu-screen .overlay-content {
+  position: relative;
+  z-index: 1;
+}
+
+#menu-screen::before,
+#menu-screen::after {
+  content: '';
+  position: absolute;
+  inset: -30px;
+  pointer-events: none;
+  z-index: 0;
+  background-image:
+    radial-gradient(1px 1px at 10% 15%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 25% 45%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 40% 10%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 55% 70%, rgba(255, 255, 255, 0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 70% 25%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 85% 55%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 15% 80%, rgba(255, 255, 255, 0.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 92% 88%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 48% 92%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 5% 50%, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
+  animation: starDrift 60s linear infinite;
+  opacity: 0.5;
+}
+
+#menu-screen::after {
+  background-image:
+    radial-gradient(1px 1px at 8% 35%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 22% 75%, rgba(255, 255, 255, 0.45) 0%, transparent 100%),
+    radial-gradient(1px 1px at 38% 55%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 52% 20%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 65% 90%, rgba(255, 255, 255, 0.35) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 42%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 12%, rgba(255, 255, 255, 0.5) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 33% 30%, rgba(255, 255, 255, 0.3) 0%, transparent 100%),
+    radial-gradient(1px 1px at 60% 48%, rgba(255, 255, 255, 0.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 95% 65%, rgba(255, 255, 255, 0.35) 0%, transparent 100%);
+  animation: starDrift 90s linear infinite reverse;
+  opacity: 0.35;
+}
+
+[data-theme='dark'] #menu-screen::before {
+  opacity: 0.8;
+}
+
+[data-theme='dark'] #menu-screen::after {
+  opacity: 0.6;
+}
+
+@keyframes starDrift {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-20px);
+  }
+}
+
+/* ─── Menu title glow ─── */
+
+#menu-screen .overlay-content h1 {
+  text-shadow:
+    0 0 20px rgba(78, 205, 196, 0.3),
+    0 0 40px rgba(78, 205, 196, 0.1);
+  animation: titleGlow 3s ease-in-out infinite alternate;
+}
+
+@keyframes titleGlow {
+  from {
+    text-shadow:
+      0 0 20px rgba(78, 205, 196, 0.2),
+      0 0 40px rgba(78, 205, 196, 0.05);
+  }
+  to {
+    text-shadow:
+      0 0 30px rgba(78, 205, 196, 0.4),
+      0 0 60px rgba(78, 205, 196, 0.15);
+  }
+}
+
+/* ─── Play button pulse ─── */
+
+#btn-start {
+  animation: btnPulse 2s ease-out infinite;
+}
+
+#btn-start:hover,
+#btn-start:active {
+  animation-play-state: paused;
+}
+
+@keyframes btnPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(78, 205, 196, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(78, 205, 196, 0);
+  }
+}
+
+/* ─── Staggered menu entrance ─── */
+
+#menu-screen .overlay-content > * {
+  opacity: 0;
+  transform: translateY(12px);
+  animation: menuFadeIn 0.5s ease-out forwards;
+}
+
+#menu-screen .overlay-content > *:nth-child(1) {
+  animation-delay: 0s;
+}
+#menu-screen .overlay-content > *:nth-child(2) {
+  animation-delay: 0.08s;
+}
+#menu-screen .overlay-content > *:nth-child(3) {
+  animation-delay: 0.16s;
+}
+#menu-screen .overlay-content > *:nth-child(4) {
+  animation-delay: 0.24s;
+}
+#menu-screen .overlay-content > *:nth-child(5) {
+  animation-delay: 0.32s;
+}
+#menu-screen .overlay-content > *:nth-child(6) {
+  animation-delay: 0.4s;
+}
+
+@keyframes menuFadeIn {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Daily challenge card enhancement ─── */
+
+#menu-screen .daily-challenge {
+  border-left: 3px solid var(--primary);
+  box-shadow: 0 0 20px rgba(78, 205, 196, 0.08);
+}
+
+#menu-screen .daily-label {
+  animation: dailyLabelPulse 3s ease-in-out infinite alternate;
+}
+
+@keyframes dailyLabelPulse {
+  from {
+    letter-spacing: 2px;
+  }
+  to {
+    letter-spacing: 3px;
+  }
+}
+
 /* ─── Overlays ─── */
 
 .overlay {
@@ -566,6 +730,30 @@ body {
   }
   to {
     opacity: 1;
+  }
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  #menu-screen::before,
+  #menu-screen::after,
+  #menu-screen .overlay-content h1,
+  #btn-start,
+  #menu-screen .daily-label {
+    animation: none;
+  }
+
+  #menu-screen .overlay-content > * {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  #menu-screen .overlay-content h1 {
+    text-shadow:
+      0 0 20px rgba(78, 205, 196, 0.3),
+      0 0 40px rgba(78, 205, 196, 0.1);
   }
 }
 
