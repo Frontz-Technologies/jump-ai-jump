@@ -45,6 +45,15 @@ export class HUD {
     if (this.atmoIndicatorEl && planetConfig) {
       this._updateAtmoIndicator(planetConfig.atmosphereLabel);
     }
+    // Set planet accent color on HUD center pill border
+    const hudCenter = document.getElementById('hud-center');
+    if (hudCenter && planetConfig && planetConfig.skyColor) {
+      const hex = planetConfig.skyColor;
+      const r = parseInt(hex.slice(1, 3), 16);
+      const g = parseInt(hex.slice(3, 5), 16);
+      const b = parseInt(hex.slice(5, 7), 16);
+      hudCenter.style.setProperty('--planet-accent', `rgba(${r}, ${g}, ${b}, 0.25)`);
+    }
   }
 
   _getPlanetIndex(planetConfig) {
@@ -86,13 +95,16 @@ export class HUD {
   updateWind(windSpeed) {
     if (!this.windArrowEl || !this.windValueEl) return;
     if (windSpeed === 0 || windSpeed == null) {
-      this.windArrowEl.textContent = '—';
+      this.windArrowEl.style.transform = 'rotate(0deg)';
+      this.windArrowEl.style.opacity = '0.3';
       this.windValueEl.textContent = 'Calm';
     } else if (windSpeed > 0) {
-      this.windArrowEl.textContent = '→';
+      this.windArrowEl.style.transform = 'rotate(0deg)';
+      this.windArrowEl.style.opacity = '1';
       this.windValueEl.textContent = `${Math.abs(windSpeed).toFixed(1)} m/s tailwind`;
     } else {
-      this.windArrowEl.textContent = '←';
+      this.windArrowEl.style.transform = 'rotate(180deg)';
+      this.windArrowEl.style.opacity = '1';
       this.windValueEl.textContent = `${Math.abs(windSpeed).toFixed(1)} m/s headwind`;
     }
   }

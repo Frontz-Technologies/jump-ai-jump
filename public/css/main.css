@@ -116,13 +116,15 @@ body {
   flex-direction: column;
   align-items: center;
   pointer-events: none;
-  background: rgba(0, 0, 0, 0.35);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
+  border: 1px solid var(--planet-accent, rgba(255, 255, 255, 0.08));
   border-radius: 12px;
   padding: 8px 20px 10px;
   max-width: 180px;
   margin: 0 auto;
+  transition: border-color 0.5s ease;
 }
 
 #stage-label {
@@ -132,6 +134,7 @@ body {
   letter-spacing: 1.5px;
   text-transform: uppercase;
   margin-bottom: 2px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 #planet-name {
@@ -186,6 +189,9 @@ body {
   line-height: 1;
   color: #ffffff;
   letter-spacing: -1px;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.6),
+    0 0 2px rgba(0, 0, 0, 0.3);
 }
 
 #jump-label {
@@ -194,6 +200,7 @@ body {
   margin-top: 3px;
   letter-spacing: 1.5px;
   text-transform: uppercase;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
 #hud-right {
@@ -283,9 +290,9 @@ body {
   gap: 16px;
   padding: 10px 16px;
   font-size: 11px;
-  background: rgba(0, 0, 0, 0.4);
-  -webkit-backdrop-filter: blur(16px);
-  backdrop-filter: blur(16px);
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
+  backdrop-filter: blur(20px) saturate(1.2);
   z-index: 10;
   pointer-events: none;
 }
@@ -319,8 +326,17 @@ body {
 }
 
 #wind-arrow {
-  font-size: 13px;
-  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+}
+
+.wind-svg {
+  display: inline-block;
+  vertical-align: middle;
+  margin-top: -1px;
+  transition: transform 0.3s ease;
 }
 
 #hud-bottom .atmo-label {
