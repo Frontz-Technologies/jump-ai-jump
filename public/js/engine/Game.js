@@ -1043,6 +1043,9 @@ export class Game {
     // Re-apply tourist mode (skipToStage resets difficulty)
     this._isHumanTourist = true;
     this.difficulty.setHumanTouristMode(true);
+
+    // Re-persist checkpoint so it survives subsequent deaths
+    this._checkpoint = cp;
   }
 
   _victory() {
