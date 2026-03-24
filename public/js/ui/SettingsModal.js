@@ -4,13 +4,11 @@ export class SettingsModal {
    * @param {import('../data/Storage.js').Storage} storage
    * @param {object} callbacks
    * @param {function(boolean)} callbacks.onSoundChange
-   * @param {function(boolean)} callbacks.onDarkModeChange
    */
   constructor(storage, callbacks) {
     this.storage = storage;
     this.modal = document.getElementById('settings-modal');
     this.soundToggle = document.getElementById('setting-sound');
-    this.darkModeToggle = document.getElementById('setting-darkmode');
     this.touristToggle = document.getElementById('setting-tourist');
     this.touristRow = document.getElementById('tourist-toggle-row');
     this.nameInput = document.getElementById('setting-name');
@@ -18,7 +16,6 @@ export class SettingsModal {
     // Init from saved settings
     const settings = storage.getSettings();
     this.soundToggle.checked = settings.sound;
-    this.darkModeToggle.checked = settings.darkMode;
     this.touristToggle.checked = settings.humanTourist === true;
 
     // Init name
@@ -27,23 +24,11 @@ export class SettingsModal {
       this.nameInput.value = name === 'Anonymous' ? '' : name;
     }
 
-    // Apply dark mode on load
-    if (settings.darkMode) {
-      document.documentElement.dataset.theme = 'dark';
-    }
-
     // Events
     this.soundToggle.addEventListener('change', () => {
       const on = this.soundToggle.checked;
       storage.setSetting('sound', on);
       callbacks.onSoundChange(on);
-    });
-
-    this.darkModeToggle.addEventListener('change', () => {
-      const on = this.darkModeToggle.checked;
-      storage.setSetting('darkMode', on);
-      document.documentElement.dataset.theme = on ? 'dark' : '';
-      callbacks.onDarkModeChange(on);
     });
 
     this.touristToggle.addEventListener('change', () => {

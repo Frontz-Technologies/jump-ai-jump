@@ -208,7 +208,6 @@ export class Game {
   _initSettings() {
     this.settingsModal = new SettingsModal(this.storage, {
       onSoundChange: (on) => this.audio.setEnabled(on),
-      onDarkModeChange: () => {},
     });
     this.statsModal = new StatsModal(this.storage);
   }
