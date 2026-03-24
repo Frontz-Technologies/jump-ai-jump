@@ -479,7 +479,7 @@ export class PlanetaryTheme extends ThemeBase {
 
   // --- Platforms ---
 
-  drawPlatform(ctx, platform, index, _totalPlatforms) {
+  drawPlatform(ctx, platform, index, _totalPlatforms, personalBestIndex) {
     const stage = Math.floor(index / PLATFORMS_PER_STAGE);
     const planets = this._allPlanets || PLANET_CONFIGS;
     const planet = planets[Math.min(stage, planets.length - 1)];
@@ -519,6 +519,12 @@ export class PlanetaryTheme extends ThemeBase {
 
     // Planet-specific platform details
     this._drawPlatformDetails(ctx, platform, drawY, planet);
+
+    // Personal best flag — draw on the record platform
+    // personalBestIndex is 1-based (platform 1 = index 0)
+    if (personalBestIndex > 0 && index === personalBestIndex - 1) {
+      this._drawPersonalBestFlag(ctx, platform, drawY);
+    }
   }
 
   /** Build a platform path with a bumpy/rocky top edge. */
@@ -613,6 +619,61 @@ export class PlanetaryTheme extends ThemeBase {
       ctx.roundRect(platform.x - 2, drawY - 2, platform.width + 4, platform.height + 4, 10);
       ctx.stroke();
     }
+  }
+
+  /** Draw a pixel-art Mario-style flag on the personal best platform. */
+  _drawPersonalBestFlag(ctx, platform, drawY) {
+    const poleX = platform.x + platform.width - 18;
+    const poleBottom = drawY; // top of platform surface
+    const poleHeight = 40;
+    const poleTop = poleBottom - poleHeight;
+    const poleWidth = 3;
+
+    // Brown pole
+    ctx.fillStyle = '#8B4513';
+    ctx.fillRect(poleX, poleTop, poleWidth, poleHeight);
+
+    // Pole cap (small ball at top)
+    ctx.fillStyle = '#DAA520';
+    ctx.beginPath();
+    ctx.arc(poleX + poleWidth / 2, poleTop, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Red waving flag (triangular pennant shape)
+    const flagTop = poleTop + 2;
+    const flagHeight = 14;
+    const flagWidth = 18;
+
+    ctx.fillStyle = '#DC143C';
+    ctx.beginPath();
+    ctx.moveTo(poleX + poleWidth, flagTop);
+    // Wavy edge using a quadratic curve
+    ctx.quadraticCurveTo(
+      poleX + poleWidth + flagWidth * 0.6,
+      flagTop + flagHeight * 0.3,
+      poleX + poleWidth + flagWidth,
+      flagTop + flagHeight * 0.45,
+    );
+    ctx.quadraticCurveTo(
+      poleX + poleWidth + flagWidth * 0.6,
+      flagTop + flagHeight * 0.7,
+      poleX + poleWidth,
+      flagTop + flagHeight,
+    );
+    ctx.closePath();
+    ctx.fill();
+
+    // Flag stroke for definition
+    ctx.strokeStyle = '#8B0000';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // "PB" text label (tiny, on the flag)
+    ctx.fillStyle = '#FFFFFF';
+    ctx.font = 'bold 7px monospace';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('PB', poleX + poleWidth + 3, flagTop + flagHeight * 0.45);
   }
 
   /** Draw friction-based surface overlay on platform (color/texture only — shape is in drawPlatform). */

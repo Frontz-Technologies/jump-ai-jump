@@ -332,6 +332,10 @@ export class Game {
     this._isHumanTourist = this.storage.getSettings().humanTourist === true;
     this._checkpoint = null;
 
+    // Cache personal best platform for current mode (1-based; 0 = no record)
+    const bestKey = this._isHumanTourist ? 'bestPlatformTourist' : 'bestPlatform';
+    this._personalBestPlatform = this.storage.getStats()[bestKey] || 0;
+
     // Init difficulty with galaxy data if available
     if (this._galaxyMode) {
       this.difficulty.initFromGalaxy(this._galaxyPlanets, this._totalStages);
@@ -847,7 +851,8 @@ export class Game {
           }
 
           // Track best platform and best stage
-          this.storage.setStatIfHigher('bestPlatform', i + 1);
+          const bestKey = this._isHumanTourist ? 'bestPlatformTourist' : 'bestPlatform';
+          this.storage.setStatIfHigher(bestKey, i + 1);
           this.storage.setStatIfHigher('bestStage', this.stageIndex + 1);
           checkTrophies(this.storage);
 
@@ -950,6 +955,7 @@ export class Game {
       planetIndex: this.stageIndex,
       planet: this.currentPlanet,
       sliding: slidingInfo,
+      personalBestIndex: this._personalBestPlatform,
       ghosts: this.ghostNet.getGhosts(this.stageIndex, this.platforms, this.currentPlatformIndex),
       aiEye: {
         active: this.difficulty.isLLMPending(),
