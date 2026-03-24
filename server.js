@@ -1234,7 +1234,7 @@ setInterval(checkGalaxyRotation, 60000);
 // --- Start server ---
 if (require.main === module) {
   server.listen(PORT, () => {
-    console.log(`Planetary Jumper server running at http://localhost:${PORT}`);
+    console.log(`Jump AI Jump server running at http://localhost:${PORT}`);
     // Check galaxy on startup
     checkGalaxyRotation().catch((err) =>
       console.error('[Galaxy] Startup check failed:', err.message),
