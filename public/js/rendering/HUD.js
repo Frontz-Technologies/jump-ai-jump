@@ -104,13 +104,16 @@ export class HUD {
   updateWind(windSpeed) {
     if (!this.windArrowEl || !this.windValueEl) return;
     if (windSpeed === 0 || windSpeed == null) {
-      this.windArrowEl.textContent = '—';
+      this.windArrowEl.style.transform = 'rotate(0deg)';
+      this.windArrowEl.style.opacity = '0.3';
       this.windValueEl.textContent = 'Calm';
     } else if (windSpeed > 0) {
-      this.windArrowEl.textContent = '→';
+      this.windArrowEl.style.transform = 'rotate(0deg)';
+      this.windArrowEl.style.opacity = '1';
       this.windValueEl.textContent = `${Math.abs(windSpeed).toFixed(1)} m/s tailwind`;
     } else {
-      this.windArrowEl.textContent = '←';
+      this.windArrowEl.style.transform = 'rotate(180deg)';
+      this.windArrowEl.style.opacity = '1';
       this.windValueEl.textContent = `${Math.abs(windSpeed).toFixed(1)} m/s headwind`;
     }
   }
