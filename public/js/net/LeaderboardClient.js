@@ -16,9 +16,11 @@ export class LeaderboardClient {
     }
   }
 
-  async fetchLeaderboard(galaxyId) {
+  async fetchLeaderboard(galaxyId, { excludeTourist = false } = {}) {
     try {
-      const response = await fetch(`/api/leaderboard/${encodeURIComponent(galaxyId)}`);
+      let url = `/api/leaderboard/${encodeURIComponent(galaxyId)}`;
+      if (excludeTourist) url += '?excludeTourist=true';
+      const response = await fetch(url);
       if (!response.ok) return [];
       return await response.json();
     } catch {
@@ -26,9 +28,11 @@ export class LeaderboardClient {
     }
   }
 
-  async fetchHistory() {
+  async fetchHistory({ excludeTourist = false } = {}) {
     try {
-      const response = await fetch('/api/leaderboard/history');
+      let url = '/api/leaderboard/history';
+      if (excludeTourist) url += '?excludeTourist=true';
+      const response = await fetch(url);
       if (!response.ok) return [];
       return await response.json();
     } catch {

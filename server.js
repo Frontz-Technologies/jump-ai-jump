@@ -746,10 +746,10 @@ app.post('/api/leaderboard/submit', async (req, res) => {
   res.json({ ok: true, rank: result.rank });
 });
 
-// All-time leaderboard: best run per player across all galaxies
+// All-time leaderboard: best run per player across all galaxies (excludes tourist by default)
 app.get('/api/leaderboard/all-time', async (_req, res) => {
   try {
-    res.json(await storage.aggregateLeaderboard());
+    res.json(await storage.aggregateLeaderboard({ excludeTourist: true }));
   } catch {
     res.json([]);
   }
@@ -765,8 +765,9 @@ app.get('/api/leaderboard/tourist', async (_req, res) => {
 });
 
 // Note: /history must be before /:galaxyId to avoid param capture
-app.get('/api/leaderboard/history', async (_req, res) => {
-  res.json(await storage.loadLeaderboardHistory());
+app.get('/api/leaderboard/history', async (req, res) => {
+  const excludeTourist = req.query.excludeTourist === 'true';
+  res.json(await storage.loadLeaderboardHistory({ excludeTourist }));
 });
 
 app.get('/api/leaderboard/:galaxyId', async (req, res) => {
@@ -774,7 +775,9 @@ app.get('/api/leaderboard/:galaxyId', async (req, res) => {
   if (galaxyId === 'current' && currentGalaxy) galaxyId = currentGalaxy.galaxyId;
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId))
     return res.status(400).json({ error: 'Invalid galaxyId' });
-  res.json(await storage.loadLeaderboard(galaxyId));
+  const excludeTourist = req.query.excludeTourist === 'true';
+  const entries = await storage.loadLeaderboard(galaxyId, { excludeTourist });
+  res.json(entries);
 });
 
 // --- MCP session manager ---

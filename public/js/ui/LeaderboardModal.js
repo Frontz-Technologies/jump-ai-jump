@@ -62,7 +62,7 @@ export class LeaderboardModal {
     if (this._title) this._title.textContent = 'Current Galaxy';
 
     const id = this._galaxyId || 'current';
-    const entries = await this._client.fetchLeaderboard(id);
+    const entries = await this._client.fetchLeaderboard(id, { excludeTourist: true });
 
     if (!entries || entries.length === 0) {
       this._list.innerHTML = '<p class="lb-empty">No scores yet</p>';
@@ -99,7 +99,7 @@ export class LeaderboardModal {
     this._list.innerHTML = '<p class="lb-loading">Loading...</p>';
     if (this._title) this._title.textContent = 'Past Galaxies';
 
-    const history = await this._client.fetchHistory();
+    const history = await this._client.fetchHistory({ excludeTourist: true });
 
     if (!history || history.length === 0) {
       this._list.innerHTML = '<p class="lb-empty">No past galaxies</p>';
