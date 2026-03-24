@@ -242,16 +242,18 @@ async function collectUsedPlanetNames() {
 // Leaderboard functions
 // ---------------------------------------------------------------------------
 
-async function loadLeaderboard(galaxyId) {
+async function loadLeaderboard(galaxyId, opts) {
+  const excludeTourist = opts?.excludeTourist || false;
+
   if (mode === 'supabase') {
     try {
-      const { data, error } = await supabase
-        .from('leaderboard_entries')
-        .select('*')
-        .eq('galaxy_id', galaxyId)
+      let query = supabase.from('leaderboard_entries').select('*').eq('galaxy_id', galaxyId);
+      if (excludeTourist) query = query.or('human_tourist.is.null,human_tourist.eq.false');
+      query = query
         .order('highest_stage', { ascending: false })
         .order('time_ms', { ascending: true })
         .limit(100);
+      const { data, error } = await query;
       if (error) {
         console.error('[Storage] loadLeaderboard error:', error.message);
         return [];
@@ -267,7 +269,9 @@ async function loadLeaderboard(galaxyId) {
   const lbPath = path.join(LEADERBOARDS_DIR, `${galaxyId}.json`);
   try {
     if (fs.existsSync(lbPath)) {
-      return JSON.parse(fs.readFileSync(lbPath, 'utf-8'));
+      let entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8'));
+      if (excludeTourist) entries = entries.filter((e) => !e.humanTourist);
+      return entries;
     }
     return [];
   } catch {
@@ -369,6 +373,7 @@ async function saveLeaderboardEntry(galaxyId, entry) {
 
 async function aggregateLeaderboard(opts) {
   const humanTouristOnly = opts?.humanTouristOnly || false;
+  const excludeTourist = opts?.excludeTourist || false;
 
   if (mode === 'supabase') {
     try {
@@ -379,6 +384,7 @@ async function aggregateLeaderboard(opts) {
           'player_id, player_name, highest_stage, time_ms, galaxy_id, submitted_at, human_tourist',
         );
       if (humanTouristOnly) query = query.eq('human_tourist', true);
+      else if (excludeTourist) query = query.or('human_tourist.is.null,human_tourist.eq.false');
 
       const { data: entries, error: entriesErr } = await query;
       if (entriesErr) {
@@ -419,7 +425,11 @@ async function aggregateLeaderboard(opts) {
   }
 
   // --- FS fallback ---
-  const filterFn = humanTouristOnly ? (e) => e.humanTourist : null;
+  const filterFn = humanTouristOnly
+    ? (e) => e.humanTourist
+    : excludeTourist
+      ? (e) => !e.humanTourist
+      : null;
   const files = fs.readdirSync(LEADERBOARDS_DIR).filter((f) => f.endsWith('.json'));
   const galaxies = await listGalaxyHistory();
   const galaxyMap = {};
@@ -452,19 +462,21 @@ async function aggregateLeaderboard(opts) {
     .slice(0, 50);
 }
 
-async function loadLeaderboardHistory() {
+async function loadLeaderboardHistory(opts) {
+  const excludeTourist = opts?.excludeTourist || false;
+
   if (mode === 'supabase') {
     try {
       const galaxies = await listGalaxyHistory();
       const result = [];
       for (const g of galaxies) {
-        const { data } = await supabase
-          .from('leaderboard_entries')
-          .select('*')
-          .eq('galaxy_id', g.galaxyId)
+        let query = supabase.from('leaderboard_entries').select('*').eq('galaxy_id', g.galaxyId);
+        if (excludeTourist) query = query.or('human_tourist.is.null,human_tourist.eq.false');
+        query = query
           .order('highest_stage', { ascending: false })
           .order('time_ms', { ascending: true })
           .limit(10);
+        const { data } = await query;
         result.push({ ...g, entries: (data || []).map(dbEntryToJs) });
       }
       return result;
@@ -481,7 +493,9 @@ async function loadLeaderboardHistory() {
     let entries = [];
     try {
       if (fs.existsSync(lbPath)) {
-        entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8')).slice(0, 10);
+        entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8'));
+        if (excludeTourist) entries = entries.filter((e) => !e.humanTourist);
+        entries = entries.slice(0, 10);
       }
     } catch {}
     return { ...g, entries };

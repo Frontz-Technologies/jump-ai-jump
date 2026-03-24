@@ -21,6 +21,8 @@ export class UIManager {
     this.hud = document.getElementById('hud');
     this.checkpointBtn = document.getElementById('btn-checkpoint');
     this._mcpBridge = null;
+    this._isHumanTourist = false;
+    this._storage = null; // set via setTouristMode()
 
     // Wire buttons
     document.getElementById('btn-start').addEventListener('click', callbacks.onStart);
@@ -40,13 +42,19 @@ export class UIManager {
     // AI button & MCP modal
     const aiBtn = document.getElementById('btn-ai');
     if (aiBtn) {
-      aiBtn.addEventListener('click', () => this._openMCPModal());
+      aiBtn.addEventListener('click', () => this._handleAIButtonClick());
     }
     const tauntConnectBtn = document.getElementById('btn-taunt-connect');
     if (tauntConnectBtn) {
-      tauntConnectBtn.addEventListener('click', () => this._openMCPModal());
+      tauntConnectBtn.addEventListener('click', () => this._handleAIButtonClick());
+    }
+    // Taunt switch button (tourist mode)
+    const tauntSwitchBtn = document.getElementById('btn-taunt-switch');
+    if (tauntSwitchBtn) {
+      tauntSwitchBtn.addEventListener('click', () => this._switchToExplorer());
     }
     this._wireMCPModal();
+    this._wireModeSwitchModal();
 
     // Auto-connect MCP bridge when ?mcpSession=xxx is in the URL
     const autoSession = new URLSearchParams(window.location.search).get('mcpSession');
@@ -88,6 +96,75 @@ export class UIManager {
         }
       });
     }
+  }
+
+  /**
+   * Called by Game to inform UIManager of the current tourist mode and storage ref.
+   */
+  setTouristMode(isTourist, storage) {
+    this._isHumanTourist = isTourist;
+    this._storage = storage;
+    this._updateTauntCard();
+  }
+
+  _updateTauntCard() {
+    const explorerText = document.getElementById('taunt-text-explorer');
+    const touristText = document.getElementById('taunt-text-tourist');
+    const connectBtn = document.getElementById('btn-taunt-connect');
+    const switchBtn = document.getElementById('btn-taunt-switch');
+    if (this._isHumanTourist) {
+      if (explorerText) explorerText.classList.add('hidden');
+      if (touristText) touristText.classList.remove('hidden');
+      if (connectBtn) connectBtn.classList.add('hidden');
+      if (switchBtn) switchBtn.classList.remove('hidden');
+    } else {
+      if (explorerText) explorerText.classList.remove('hidden');
+      if (touristText) touristText.classList.add('hidden');
+      if (connectBtn) connectBtn.classList.remove('hidden');
+      if (switchBtn) switchBtn.classList.add('hidden');
+    }
+  }
+
+  _handleAIButtonClick() {
+    if (this._isHumanTourist) {
+      this._openModeSwitchModal();
+    } else {
+      this._openMCPModal();
+    }
+  }
+
+  _wireModeSwitchModal() {
+    const modal = document.getElementById('mode-switch-modal');
+    if (!modal) return;
+
+    const closeBtn = modal.querySelector('[data-close="mode-switch-modal"]');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+    const switchBtn = document.getElementById('btn-switch-explorer');
+    if (switchBtn) {
+      switchBtn.addEventListener('click', () => this._switchToExplorer());
+    }
+    const cancelBtn = document.getElementById('btn-switch-cancel');
+    if (cancelBtn) {
+      cancelBtn.addEventListener('click', () => modal.classList.add('hidden'));
+    }
+  }
+
+  _openModeSwitchModal() {
+    const modal = document.getElementById('mode-switch-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  _switchToExplorer() {
+    if (this._storage) {
+      this._storage.setSetting('humanTourist', false);
+    }
+    window.location.reload();
   }
 
   _openMCPModal() {

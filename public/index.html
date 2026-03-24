@@ -199,10 +199,14 @@
           </div>
           <button id="btn-start" class="primary-btn">LAUNCH</button>
           <div class="ai-taunt-card" id="menu-taunt">
-            <p class="ai-taunt-text">
+            <p class="ai-taunt-text" id="taunt-text-explorer">
               Past level 2, reflexes won't be enough. Connect your AI agent to go further.
             </p>
+            <p class="ai-taunt-text hidden" id="taunt-text-tourist">
+              Want to see how AI plays? Switch to Explorer mode.
+            </p>
             <button id="btn-taunt-connect" class="ai-taunt-btn">Connect AI</button>
+            <button id="btn-taunt-switch" class="ai-taunt-btn hidden">Switch to Explorer</button>
           </div>
           <div class="menu-footer">
             <button id="menu-leaderboard" class="text-btn">Leaderboard</button>
@@ -320,6 +324,27 @@
             </div>
             <h4>Trophies</h4>
             <div id="trophy-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mode-switch nudge modal (shown when tourist clicks AI button) -->
+      <div id="mode-switch-modal" class="modal hidden">
+        <div class="modal-backdrop"></div>
+        <div class="modal-content">
+          <div class="modal-header">
+            <h3>Explorer Mode Required</h3>
+            <button class="close-btn" data-close="mode-switch-modal">&times;</button>
+          </div>
+          <div class="modal-body" style="text-align: center">
+            <p style="margin-bottom: 16px; color: var(--text-muted); line-height: 1.6">
+              AI agents play in Explorer mode. Switch to Explorer to connect your AI.
+            </p>
+            <button id="btn-switch-explorer" class="primary-btn" style="margin-bottom: 8px">
+              Switch to Explorer
+            </button>
+            <br />
+            <button id="btn-switch-cancel" class="text-btn">Cancel</button>
           </div>
         </div>
       </div>

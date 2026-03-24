@@ -126,6 +126,9 @@ export class Game {
     // Apply saved settings
     this.audio.setEnabled(this.storage.getSettings().sound);
 
+    // Inform UIManager of tourist mode so it can gate MCP and adapt the taunt card
+    this.ui.setTouristMode(this.storage.getSettings().humanTourist === true, this.storage);
+
     // Prefetch galaxy info for menu display
     this._loadMenuGalaxyInfo();
 
