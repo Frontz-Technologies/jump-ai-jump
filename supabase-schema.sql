@@ -41,3 +41,22 @@ CREATE TABLE IF NOT EXISTS llm_logs (
 );
 
 CREATE INDEX IF NOT EXISTS idx_llm_logs_created ON llm_logs (created_at DESC);
+
+-- ---------------------------------------------------------------------------
+-- Row Level Security (RLS)
+-- Prevents direct access via the Supabase anon/publishable key.
+-- The server should use the service_role key for full access.
+-- ---------------------------------------------------------------------------
+
+ALTER TABLE galaxies ENABLE ROW LEVEL SECURITY;
+ALTER TABLE leaderboard_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE llm_logs ENABLE ROW LEVEL SECURITY;
+
+-- Service role has full access (used by the Express server)
+CREATE POLICY "service_role_all" ON galaxies FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON leaderboard_entries FOR ALL TO service_role USING (true) WITH CHECK (true);
+CREATE POLICY "service_role_all" ON llm_logs FOR ALL TO service_role USING (true) WITH CHECK (true);
+
+-- Anon users can only read galaxies and leaderboards (public data)
+CREATE POLICY "anon_read_galaxies" ON galaxies FOR SELECT TO anon USING (true);
+CREATE POLICY "anon_read_leaderboards" ON leaderboard_entries FOR SELECT TO anon USING (true);

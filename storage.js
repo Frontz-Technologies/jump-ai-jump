@@ -40,17 +40,20 @@ async function initStorage() {
 
       const failed = checks.filter((c) => c.status === 'rejected' || c.value?.error);
       if (failed.length > 0) {
-        console.warn(
-          '[Storage] Supabase tables may not exist. Please run supabase-schema.sql in the Supabase SQL Editor.',
-        );
+        console.warn('[Storage] Supabase table probes failed — falling back to filesystem.');
+        console.warn('[Storage] Run supabase-schema.sql in the Supabase SQL Editor to fix this.');
         for (const c of failed) {
           const err = c.status === 'rejected' ? c.reason : c.value?.error?.message;
           if (err) console.warn('[Storage]  -', err);
         }
+        supabase = null;
+        mode = 'fs';
+        ensureFsDirs();
+        console.log('[Storage] Using filesystem backend (Supabase fallback)');
+      } else {
+        mode = 'supabase';
+        console.log('[Storage] Using Supabase backend');
       }
-
-      mode = 'supabase';
-      console.log('[Storage] Using Supabase backend');
     } catch (err) {
       console.error(
         '[Storage] Failed to initialise Supabase, falling back to filesystem:',
@@ -88,7 +91,7 @@ async function loadCurrentGalaxy() {
         .from('galaxies')
         .select('*')
         .eq('is_current', true)
-        .single();
+        .maybeSingle();
       if (error || !data) return null;
       // Check expiry
       if (new Date(data.expires_at) <= new Date()) return null;
@@ -275,13 +278,16 @@ async function loadLeaderboard(galaxyId) {
 async function saveLeaderboardEntry(galaxyId, entry) {
   if (mode === 'supabase') {
     try {
-      // Check for existing entry
-      const { data: existing } = await supabase
+      // Check for existing entry (.maybeSingle returns null without error when 0 rows)
+      const { data: existing, error: lookupErr } = await supabase
         .from('leaderboard_entries')
         .select('*')
         .eq('galaxy_id', galaxyId)
         .eq('player_id', entry.playerId)
-        .single();
+        .maybeSingle();
+      if (lookupErr) {
+        console.error('[Storage] Leaderboard lookup error:', lookupErr.message);
+      }
 
       const row = {
         galaxy_id: galaxyId,
