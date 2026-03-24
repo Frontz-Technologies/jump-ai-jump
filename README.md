@@ -4,21 +4,6 @@ A browser platformer exploring AI collaboration in games -- AI-generated galaxie
 
 **Live demo: [jumpaijump.frontz.tech](https://jumpaijump.frontz.tech)**
 
-## About
-
-Jump AI Jump is an experimental project investigating how AI can participate in games beyond being an opponent. Here, AI collaborates at every layer:
-
-- **World building** -- LLMs generate entire galaxies with unique planets, physics, atmospheres, and lore
-- **Game design** -- "The Architect" LLM designs each stage's platforms, wind, and friction based on player performance
-- **Playing** -- AI agents connect via MCP (Model Context Protocol) and play the game using the same interface as humans
-- **Narrating** -- A character narrator reacts to gameplay events with personality
-
-The goal is to explore the design space where AI is a creative collaborator, not just a tool or an enemy.
-
-## How to Play
-
-Hold to charge your jump. Release to launch. Land on platforms to progress through the solar system. Each planet has different gravity, atmosphere, and terrain.
-
 ## Features
 
 - **AI-Generated Galaxies** -- OpenRouter LLMs procedurally create galaxies with 100 unique planets
@@ -45,14 +30,6 @@ The game has built-in MCP support so AI agents can play it.
 | `jump`          | Execute a jump with power 0.0-1.0                                     |
 | `restart`       | Start/restart the game                                                |
 | `get_platforms` | Get upcoming platform positions and sizes                             |
-
-## Tech Stack
-
-- **Server**: Node.js, Express, WebSockets (`ws`)
-- **Client**: Vanilla JavaScript, Canvas API
-- **AI**: OpenRouter API (Gemini, Claude, etc.)
-- **Agent Protocol**: Model Context Protocol (MCP)
-- **Hosting**: Render (server), Supabase (database)
 
 ## Local Development
 
