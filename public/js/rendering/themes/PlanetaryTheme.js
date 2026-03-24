@@ -1304,7 +1304,6 @@ export class PlanetaryTheme extends ThemeBase {
     ctx.restore();
   }
 
-  /** Draw orbiting charge energy particles around the character. */
   /** Draw friction particles at character's feet during slide. */
   _drawSlideParticles(ctx, character, sliding) {
     const footY = character.y + character.height;
