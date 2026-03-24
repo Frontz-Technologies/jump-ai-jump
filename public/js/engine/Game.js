@@ -681,6 +681,7 @@ export class Game {
     }
 
     char.updateAnimation(dt);
+    char.updateVisualState(dt);
 
     // Animate platform spawn offsets toward 0
     for (const entry of this._visiblePlatforms) {
@@ -1030,6 +1031,8 @@ export class Game {
     this.stopAutoPlay();
     this._hidePlanetInfo();
     this.audio.playFall();
+    this.character.deathActive = true;
+    this.character.deathTimer = 0;
 
     // Character thoughts: death
     this.thoughts.onDeath(this.currentPlatformIndex, this.stageIndex, planet.name);
@@ -1078,6 +1081,8 @@ export class Game {
     this.stopAutoPlay();
     this._hidePlanetInfo();
     this.audio.playComplete();
+    this.character.victoryActive = true;
+    this.character.victoryTimer = 0;
     this.ui.showVictory(this.currentPlatformIndex + 1, this.stageIndex + 1);
 
     // Character thoughts: victory
