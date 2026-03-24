@@ -92,13 +92,17 @@ body {
 
 #hud-left,
 #hud-right {
-  flex: 0 0 auto;
+  flex: 1 1 0;
   display: flex;
   align-items: center;
 }
 
+#hud-right {
+  justify-content: flex-end;
+}
+
 #hud-center {
-  flex: 1;
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
