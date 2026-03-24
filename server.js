@@ -1084,6 +1084,15 @@ async function ensureMCPSession(sessionId) {
 app.post('/mcp/:sessionId', async (req, res) => {
   const { sessionId } = req.params;
   try {
+    // Detect re-initialization: if the client sends 'initialize' but we
+    // already have a transport, tear down and recreate
+    const existing = mcpSessions.get(sessionId);
+    if (existing?.transport && req.body?.method === 'initialize') {
+      console.log(`[MCP] Session ${sessionId} re-initializing (client reconnected)`);
+      existing.transport = null;
+      existing.server = null;
+    }
+
     const session = await ensureMCPSession(sessionId);
     await session.transport.handleRequest(req, res);
   } catch (err) {
