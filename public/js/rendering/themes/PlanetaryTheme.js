@@ -42,7 +42,7 @@ export class PlanetaryTheme extends ThemeBase {
   initStagePalettes(count = 10, planets) {
     const source = planets || PLANET_CONFIGS;
     this._allPlanets = source; // store for background rendering
-    this.stagePalettes = source.slice(0, count).map(p => ({
+    this.stagePalettes = source.slice(0, count).map((p) => ({
       bg: p.skyColor,
       platform: p.platformColor,
       stroke: p.platformStroke,
@@ -333,9 +333,18 @@ export class PlanetaryTheme extends ThemeBase {
   _drawJupiter(ctx, w, h) {
     // Horizontal band stripes — no solid ground
     const bands = [
-      '#c4956a', '#d4a87a', '#e8c8a0', '#f0dcc0',
-      '#c4956a', '#a07050', '#d4a87a', '#c09060',
-      '#b08050', '#c4956a', '#d4a87a', '#a07050',
+      '#c4956a',
+      '#d4a87a',
+      '#e8c8a0',
+      '#f0dcc0',
+      '#c4956a',
+      '#a07050',
+      '#d4a87a',
+      '#c09060',
+      '#b08050',
+      '#c4956a',
+      '#d4a87a',
+      '#a07050',
     ];
     const bandH = h / bands.length;
     for (let i = 0; i < bands.length; i++) {
@@ -383,9 +392,9 @@ export class PlanetaryTheme extends ThemeBase {
     ctx.arc(jx, jy, jr, 0, Math.PI * 2);
     ctx.clip();
     for (let i = 0; i < 8; i++) {
-      const by = jy - jr + i * (jr * 2 / 8);
+      const by = jy - jr + i * ((jr * 2) / 8);
       ctx.fillStyle = i % 2 === 0 ? 'rgba(160,112,80,0.3)' : 'rgba(200,160,120,0.2)';
-      ctx.fillRect(jx - jr, by, jr * 2, jr * 2 / 8);
+      ctx.fillRect(jx - jr, by, jr * 2, (jr * 2) / 8);
     }
     // Red spot
     ctx.fillStyle = 'rgba(180,60,30,0.4)';
@@ -470,7 +479,7 @@ export class PlanetaryTheme extends ThemeBase {
 
   // --- Platforms ---
 
-  drawPlatform(ctx, platform, index, totalPlatforms) {
+  drawPlatform(ctx, platform, index, _totalPlatforms) {
     const stage = Math.floor(index / PLATFORMS_PER_STAGE);
     const planets = this._allPlanets || PLANET_CONFIGS;
     const planet = planets[Math.min(stage, planets.length - 1)];
@@ -586,7 +595,12 @@ export class PlanetaryTheme extends ThemeBase {
       ctx.stroke();
     } else if (bodyType === 'volcanic') {
       // Lava glow under platform
-      const glowGrad = ctx.createLinearGradient(platform.x, drawY + platform.height, platform.x, drawY + platform.height + 8);
+      const glowGrad = ctx.createLinearGradient(
+        platform.x,
+        drawY + platform.height,
+        platform.x,
+        drawY + platform.height + 8,
+      );
       glowGrad.addColorStop(0, 'rgba(255,100,20,0.3)');
       glowGrad.addColorStop(1, 'rgba(255,50,0,0)');
       ctx.fillStyle = glowGrad;
@@ -749,7 +763,7 @@ export class PlanetaryTheme extends ThemeBase {
       for (let i = 0; i < 4; i++) {
         const offset = dir * (5 + i * 8 + Math.sin(t + i * 2) * 3);
         const py = footY - 2 + Math.sin(t + i * 1.5) * 3;
-        const alpha = 0.3 + Math.abs(sliding.slideVx) / 500 * 0.4;
+        const alpha = 0.3 + (Math.abs(sliding.slideVx) / 500) * 0.4;
         const r = 1.5 + Math.sin(t + i) * 0.5;
         ctx.fillStyle = `rgba(200, 230, 255, ${Math.min(alpha, 0.7)})`;
         ctx.beginPath();
@@ -761,7 +775,7 @@ export class PlanetaryTheme extends ThemeBase {
       // Rough: orange/brown spark dots at character base
       ctx.save();
       for (let i = 0; i < 3; i++) {
-        const ox = (Math.sin(t * 3 + i * 2.1) * 0.5) * character.width;
+        const ox = Math.sin(t * 3 + i * 2.1) * 0.5 * character.width;
         const py = footY - 1 + Math.sin(t * 4 + i) * 2;
         const alpha = 0.4 + Math.sin(t * 5 + i) * 0.2;
         const r = 1 + Math.sin(t * 2 + i * 1.3) * 0.5;
@@ -836,8 +850,10 @@ export class PlanetaryTheme extends ThemeBase {
     const lines = this._wrapText(ctx, text, maxLineWidth);
     const lineHeight = 14;
     const padding = 12;
-    const bubbleWidth = Math.min(maxLineWidth + padding * 2,
-      Math.max(...lines.map(l => ctx.measureText(l).width)) + padding * 2 + 8);
+    const bubbleWidth = Math.min(
+      maxLineWidth + padding * 2,
+      Math.max(...lines.map((l) => ctx.measureText(l).width)) + padding * 2 + 8,
+    );
     const bubbleHeight = lines.length * lineHeight + padding * 2 - 4;
 
     const bubbleY = character.y - 40 - bubbleHeight;
@@ -910,5 +926,5 @@ export class PlanetaryTheme extends ThemeBase {
   }
 
   /** Death wall removed — no-op. */
-  drawDeathWall(ctx, deathWall, canvas) {}
+  drawDeathWall(_ctx, _deathWall, _canvas) {}
 }

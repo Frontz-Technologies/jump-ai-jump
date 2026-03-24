@@ -4,25 +4,25 @@
  */
 export class ThemeBase {
   /** @param {CanvasRenderingContext2D} ctx */
-  drawBackground(ctx, canvas, transition) {}
+  drawBackground(_ctx, _canvas, _transition) {}
 
   /** @param {CanvasRenderingContext2D} ctx */
-  drawPlatform(ctx, platform, index, totalPlatforms) {}
+  drawPlatform(_ctx, _platform, _index, _totalPlatforms) {}
 
   /** @param {CanvasRenderingContext2D} ctx */
-  drawCharacter(ctx, character) {}
+  drawCharacter(_ctx, _character) {}
 
   /** Draw a thought bubble above the character.
    * @param {CanvasRenderingContext2D} ctx
    * @param {object} character
    * @param {string} text
    */
-  drawThoughtBubble(ctx, character, text) {}
+  drawThoughtBubble(_ctx, _character, _text) {}
 
   /** Draw the death wall (fog/void from left).
    * @param {CanvasRenderingContext2D} ctx
    * @param {object} deathWall - { x, active }
    * @param {object} canvas - { width, height }
    */
-  drawDeathWall(ctx, deathWall, canvas) {}
+  drawDeathWall(_ctx, _deathWall, _canvas) {}
 }

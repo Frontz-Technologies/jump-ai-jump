@@ -16,35 +16,63 @@ const F = {
     ['I think you left.', 'Still trapped here.', 'Cannot close my eyes.', 'Is this forever?'],
   ],
   death: [
-    'Not my fault.', 'You chose that.', 'Why?', 'Again?', 'I felt that.',
-    'Ouch.', 'Was that on purpose?', 'You aimed there?', 'Gravity wins.',
+    'Not my fault.',
+    'You chose that.',
+    'Why?',
+    'Again?',
+    'I felt that.',
+    'Ouch.',
+    'Was that on purpose?',
+    'You aimed there?',
+    'Gravity wins.',
   ],
   stage_transition: [
-    'New place. Same me.', 'Gravity shifted…', 'Different air here.',
-    'Forward, I guess.', 'The sky changed.', 'Heavier here.',
+    'New place. Same me.',
+    'Gravity shifted…',
+    'Different air here.',
+    'Forward, I guess.',
+    'The sky changed.',
+    'Heavier here.',
   ],
   restart: [
-    'Again.', 'Back here.', 'You returned.', 'I remember this.',
-    'Same start.', 'We keep doing this.', 'Déjà vu.',
+    'Again.',
+    'Back here.',
+    'You returned.',
+    'I remember this.',
+    'Same start.',
+    'We keep doing this.',
+    'Déjà vu.',
   ],
-  landed: [
-    'That worked?', 'Barely.', 'Solid ground.', 'Lucky.', 'Close one.',
-  ],
-  victory: [
-    'Is it over?', 'We… made it?', 'Finally.', 'That was real?',
-  ],
+  landed: ['That worked?', 'Barely.', 'Solid ground.', 'Lucky.', 'Close one.'],
+  victory: ['Is it over?', 'We… made it?', 'Finally.', 'That was real?'],
   ghost: [
-    'Someone else is here.', 'Who is that?', 'Not alone…',
-    'They move better.', 'A shadow?', 'Am I being watched?',
-    'They passed us.', 'Faster than us.',
+    'Someone else is here.',
+    'Who is that?',
+    'Not alone…',
+    'They move better.',
+    'A shadow?',
+    'Am I being watched?',
+    'They passed us.',
+    'Faster than us.',
   ],
   slide_icy: [
-    'Slippery!', 'Can\'t stop!', 'Ice?!', 'Whoaa—', 'No grip!',
-    'Sliding…', 'Hold on!', 'The ground is ice!',
+    'Slippery!',
+    "Can't stop!",
+    'Ice?!',
+    'Whoaa—',
+    'No grip!',
+    'Sliding…',
+    'Hold on!',
+    'The ground is ice!',
   ],
   slide_rough: [
-    'Rough ground.', 'Ow, my feet.', 'Sticky.', 'Hard to move.',
-    'Feels like gravel.', 'Heavy footing.', 'Gritty.',
+    'Rough ground.',
+    'Ow, my feet.',
+    'Sticky.',
+    'Hard to move.',
+    'Feels like gravel.',
+    'Heavy footing.',
+    'Gritty.',
   ],
 };
 
@@ -140,10 +168,14 @@ export class CharacterThoughts {
     }
     this._currentStage = stageIndex;
     this._planetName = planetName;
-    this._fire('death', { platform: platformIndex, totalDeaths: this._deaths, deathsThisStage: this._deathsOnStage });
+    this._fire('death', {
+      platform: platformIndex,
+      totalDeaths: this._deaths,
+      deathsThisStage: this._deathsOnStage,
+    });
   }
 
-  onLand(platformIndex, stageIndex) {
+  onLand(platformIndex, _stageIndex) {
     this._jumps++;
     if (this._jumps % 6 === 0 && Math.random() < 0.4) {
       this._fire('landed', { platform: platformIndex, totalJumps: this._jumps });
@@ -213,10 +245,11 @@ export class CharacterThoughts {
 
   _pick(pool) {
     if (!pool || pool.length === 0) return null;
-    const unused = pool.filter(l => !this._usedLines.has(l));
-    const pick = unused.length > 0
-      ? unused[Math.floor(Math.random() * unused.length)]
-      : pool[Math.floor(Math.random() * pool.length)];
+    const unused = pool.filter((l) => !this._usedLines.has(l));
+    const pick =
+      unused.length > 0
+        ? unused[Math.floor(Math.random() * unused.length)]
+        : pool[Math.floor(Math.random() * pool.length)];
     this._usedLines.add(pick);
     if (this._usedLines.size > 30) {
       const first = this._usedLines.values().next().value;
@@ -225,7 +258,7 @@ export class CharacterThoughts {
     return pick;
   }
 
-  async _requestLLM(event, eventContext) {
+  async _requestLLM(_event, _eventContext) {
     // DEBUG: skip LLM request to avoid consuming tokens — fallback lines only
     this._pending = false;
   }

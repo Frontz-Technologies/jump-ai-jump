@@ -48,7 +48,7 @@ async function fetchJSON(urlPath, options = {}) {
 async function run() {
   // Start server
   server = http.createServer(app);
-  await new Promise(resolve => server.listen(PORT, resolve));
+  await new Promise((resolve) => server.listen(PORT, resolve));
   const addr = server.address();
   baseURL = `http://localhost:${addr.port}`;
   console.log(`Server listening on ${baseURL}\n`);
@@ -67,15 +67,34 @@ async function run() {
   const mockInput = {
     completedStage: 6,
     playerMetrics: {
-      jumps: 12, landings: 10, successRate: 0.833,
-      avgPower: 0.55, powerVariance: 0.03, avgAccuracy: 0.65,
-      deaths: 1, deathCause: 'fell', timeSpent: 25,
+      jumps: 12,
+      landings: 10,
+      successRate: 0.833,
+      avgPower: 0.55,
+      powerVariance: 0.03,
+      avgAccuracy: 0.65,
+      deaths: 1,
+      deathCause: 'fell',
+      timeSpent: 25,
       platformsReached: 69,
     },
-    currentConfig: { minW: 100, maxW: 160, minGap: 190, maxGap: 290, yOffset: 30, minRise: 20, maxRise: 45 },
+    currentConfig: {
+      minW: 100,
+      maxW: 160,
+      minGap: 190,
+      maxGap: 290,
+      yOffset: 30,
+      minRise: 20,
+      maxRise: 45,
+    },
     configBounds: {
-      minW: [50, 200], maxW: [80, 250], minGap: [100, 300],
-      maxGap: [150, 400], yOffset: [0, 60], minRise: [10, 60], maxRise: [20, 80],
+      minW: [50, 200],
+      maxW: [80, 250],
+      minGap: [100, 300],
+      maxGap: [150, 400],
+      yOffset: [0, 60],
+      minRise: [10, 60],
+      maxRise: [20, 80],
     },
     planet: { name: 'Titan', gReal: 1.35, airDensity: 5.4, atmosphereLabel: 'Dense' },
   };
@@ -91,41 +110,59 @@ async function run() {
     if (config.platforms && Array.isArray(config.platforms)) {
       assert(config.platforms.length === 10, 'response has 10 platform specs');
       const specKeys = ['width', 'gap', 'rise', 'yOffset', 'powerExponent'];
-      const allValid = config.platforms.every(p => specKeys.every(k => typeof p[k] === 'number'));
+      const allValid = config.platforms.every((p) =>
+        specKeys.every((k) => typeof p[k] === 'number'),
+      );
       assert(allValid, 'each platform spec has 5 numeric keys');
     } else {
       // Legacy flat format fallback
       const keys = ['minW', 'maxW', 'minGap', 'maxGap', 'yOffset', 'minRise', 'maxRise'];
-      assert(keys.every(k => typeof config[k] === 'number'), 'response has 7 numeric keys (legacy)');
+      assert(
+        keys.every((k) => typeof config[k] === 'number'),
+        'response has 7 numeric keys (legacy)',
+      );
     }
     assert(true, 'response received');
   } else if (genRes.status === 500 && genRes.data.error === 'OPENROUTER_API_KEY not configured') {
     console.log('  SKIP: No API key configured — testing error path');
-    assert(genRes.data.error === 'OPENROUTER_API_KEY not configured', 'correct error for missing key');
+    assert(
+      genRes.data.error === 'OPENROUTER_API_KEY not configured',
+      'correct error for missing key',
+    );
   } else {
     assert(false, `unexpected status ${genRes.status}: ${JSON.stringify(genRes.data)}`);
   }
 
+  const hasApiKey = genRes.status === 200;
+
   // 3. GET /api/logs should have the request
   console.log('\nTest 3: /api/logs has the request');
-  const logsAfter = await fetchJSON('/api/logs');
-  assert(logsAfter.data.length >= 1, 'at least 1 log entry');
+  if (hasApiKey) {
+    const logsAfter = await fetchJSON('/api/logs');
+    assert(logsAfter.data.length >= 1, 'at least 1 log entry');
+  } else {
+    console.log('  SKIP: No API key — no log entry expected');
+  }
 
   // 4. Check log file
   console.log('\nTest 4: logs/llm.jsonl written');
-  const logFile = path.join(ROOT, 'logs', 'llm.jsonl');
-  const fileExists = fs.existsSync(logFile);
-  assert(fileExists, 'log file exists');
-  if (fileExists) {
-    const content = fs.readFileSync(logFile, 'utf-8').trim();
-    const lines = content.split('\n').filter(l => l.trim());
-    assert(lines.length >= 1, 'at least 1 line in log file');
-    try {
-      const entry = JSON.parse(lines[lines.length - 1]);
-      assert(entry.timestamp && entry.stage != null, 'log entry has timestamp and stage');
-    } catch {
-      assert(false, 'log entry is valid JSON');
+  if (hasApiKey) {
+    const logFile = path.join(ROOT, 'logs', 'llm.jsonl');
+    const fileExists = fs.existsSync(logFile);
+    assert(fileExists, 'log file exists');
+    if (fileExists) {
+      const content = fs.readFileSync(logFile, 'utf-8').trim();
+      const lines = content.split('\n').filter((l) => l.trim());
+      assert(lines.length >= 1, 'at least 1 line in log file');
+      try {
+        const entry = JSON.parse(lines[lines.length - 1]);
+        assert(entry.timestamp && entry.stage != null, 'log entry has timestamp and stage');
+      } catch {
+        assert(false, 'log entry is valid JSON');
+      }
     }
+  } else {
+    console.log('  SKIP: No API key — no log file expected');
   }
 
   // 5. POST/GET /api/state
@@ -143,7 +180,7 @@ async function run() {
   process.exit(failed > 0 ? 1 : 0);
 }
 
-run().catch(err => {
+run().catch((err) => {
   console.error('Smoke test crashed:', err);
   if (server) server.close();
   process.exit(1);

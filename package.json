@@ -4,10 +4,21 @@
   "description": "A web-based platformer with AI-generated galaxies and MCP integration for AI agents",
   "license": "MIT",
   "author": "John Frontz <john@frontz.tech>",
-  "keywords": ["game", "platformer", "ai", "mcp", "openrouter", "procedural-generation"],
+  "keywords": [
+    "game",
+    "platformer",
+    "ai",
+    "mcp",
+    "openrouter",
+    "procedural-generation"
+  ],
   "scripts": {
     "start": "node server.js",
-    "test": "node test/llm-smoke.mjs"
+    "test": "node test/llm-smoke.mjs",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --check .",
+    "format:fix": "prettier --write ."
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.27.1",
@@ -16,5 +27,11 @@
     "express-rate-limit": "^8.3.1",
     "helmet": "^8.1.0",
     "ws": "^8.16.0"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.8.1"
   }
 }

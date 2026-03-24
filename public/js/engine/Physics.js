@@ -28,7 +28,7 @@ export function powerToVelocity(power, planet) {
   const minVY = planet ? planet.minVY : BASE_MIN_VY;
   const maxVY = planet ? planet.maxVY : BASE_MAX_VY;
   // Exponential curve: higher exponent = narrower timing window = more AI-demanding
-  const exponent = planet ? (planet.powerExponent || 1.8) : 1.8;
+  const exponent = planet ? planet.powerExponent || 1.8 : 1.8;
   const curved = Math.pow(power, exponent);
   return {
     vx: minVX + curved * (maxVX - minVX),

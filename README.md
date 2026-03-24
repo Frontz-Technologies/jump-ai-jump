@@ -35,23 +35,23 @@ The game has built-in MCP (Model Context Protocol) support so AI agents can play
 
 ### MCP Tools
 
-| Tool | Description |
-|------|-------------|
-| `get_state` | Get current game state (phase, stage, position, physics, planet info) |
-| `jump` | Execute a jump with power 0.0–1.0 |
-| `restart` | Start/restart the game |
-| `get_platforms` | Get upcoming platform positions and sizes |
+| Tool            | Description                                                           |
+| --------------- | --------------------------------------------------------------------- |
+| `get_state`     | Get current game state (phase, stage, position, physics, planet info) |
+| `jump`          | Execute a jump with power 0.0–1.0                                     |
+| `restart`       | Start/restart the game                                                |
+| `get_platforms` | Get upcoming platform positions and sizes                             |
 
 ## Environment Variables
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `OPENROUTER_API_KEY` | Yes | — | OpenRouter API key ([get one here](https://openrouter.ai)) |
-| `OPENROUTER_MODEL` | No | `google/gemini-2.0-flash-001` | LLM model for difficulty generation |
-| `GALAXY_OPENROUTER_MODEL` | No | (uses `OPENROUTER_MODEL`) | Override model for galaxy generation |
-| `NARRATOR_OPENROUTER_MODEL` | No | (uses `OPENROUTER_MODEL`) | Override model for narrator |
-| `PORT` | No | `3000` | Server port |
-| `GALAXY_ROTATION_HOURS` | No | `24` | Hours between automatic galaxy rotations |
+| Variable                    | Required | Default                       | Description                                                |
+| --------------------------- | -------- | ----------------------------- | ---------------------------------------------------------- |
+| `OPENROUTER_API_KEY`        | Yes      | —                             | OpenRouter API key ([get one here](https://openrouter.ai)) |
+| `OPENROUTER_MODEL`          | No       | `google/gemini-2.0-flash-001` | LLM model for difficulty generation                        |
+| `GALAXY_OPENROUTER_MODEL`   | No       | (uses `OPENROUTER_MODEL`)     | Override model for galaxy generation                       |
+| `NARRATOR_OPENROUTER_MODEL` | No       | (uses `OPENROUTER_MODEL`)     | Override model for narrator                                |
+| `PORT`                      | No       | `3000`                        | Server port                                                |
+| `GALAXY_ROTATION_HOURS`     | No       | `24`                          | Hours between automatic galaxy rotations                   |
 
 ## Project Structure
 

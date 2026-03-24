@@ -7,15 +7,15 @@ const fs = require('fs');
 const path = require('path');
 
 const {
-  GALAXY_PLANET_SCHEMA,
   buildGalaxyPrompt,
   buildContinuationPrompt,
   createGalaxyShell,
-  validateGalaxy,
 } = require('./galaxy-schema.js');
 
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
-const { StreamableHTTPServerTransport } = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
+const {
+  StreamableHTTPServerTransport,
+} = require('@modelcontextprotocol/sdk/server/streamableHttp.js');
 const { z } = require('zod');
 
 const helmet = require('helmet');
@@ -54,7 +54,7 @@ function appendLog(entry) {
   if (recentRequests.length > MAX_RECENT) recentRequests.shift();
   try {
     fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + '\n');
-  } catch (_) {}
+  } catch {}
 }
 
 // --- Client-reported game state ---
@@ -64,11 +64,11 @@ let clientState = null;
 const PLATFORM_SPEC_SCHEMA = {
   type: 'object',
   properties: {
-    width:           { type: 'number' },
-    gap:             { type: 'number' },
-    rise:            { type: 'number' },
-    yOffset:         { type: 'number' },
-    powerExponent:   { type: 'number' },
+    width: { type: 'number' },
+    gap: { type: 'number' },
+    rise: { type: 'number' },
+    yOffset: { type: 'number' },
+    powerExponent: { type: 'number' },
     surfaceFriction: { type: 'number' },
   },
   required: ['width', 'gap', 'rise', 'yOffset', 'powerExponent', 'surfaceFriction'],
@@ -96,16 +96,16 @@ const STRUCTURED_SCHEMA = {
 };
 
 const PLATFORM_BOUNDS = {
-  width:           [20, 250],
-  gap:             [60, 350],
-  rise:            [-30, 80],
-  yOffset:         [0, 60],
-  powerExponent:   [1.2, 4.0],
+  width: [20, 250],
+  gap: [60, 350],
+  rise: [-30, 80],
+  yOffset: [0, 60],
+  powerExponent: [1.2, 4.0],
   surfaceFriction: [0.15, 1.8],
 };
 
 function buildSystemPrompt(completedStage, bounds, planet, galaxyMode, totalStages) {
-  const stageTotal = galaxyMode ? (totalStages || 102) : 10;
+  const stageTotal = galaxyMode ? totalStages || 102 : 10;
   const windMin = planet?.windMin ?? 0;
   const windMax = planet?.windMax ?? 0;
   const planetInfo = planet
@@ -204,7 +204,8 @@ app.post('/api/generate-difficulty', difficultyLimiter, async (req, res) => {
   }
 
   try {
-    const { completedStage, playerMetrics, currentConfig, platformBounds, configBounds, planet, galaxyMode, totalStages } = req.body;
+    const { completedStage, platformBounds, configBounds, planet, galaxyMode, totalStages } =
+      req.body;
 
     const bounds = platformBounds || configBounds || PLATFORM_BOUNDS;
     const systemPrompt = buildSystemPrompt(completedStage, bounds, planet, galaxyMode, totalStages);
@@ -216,7 +217,7 @@ app.post('/api/generate-difficulty', difficultyLimiter, async (req, res) => {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
@@ -386,7 +387,10 @@ Remember: You are not angry. You are precise. And that is far worse.`;
  */
 async function requestOneLiner(systemPrompt, userMessage, label) {
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.NARRATOR_OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001';
+  const model =
+    process.env.NARRATOR_OPENROUTER_MODEL ||
+    process.env.OPENROUTER_MODEL ||
+    'google/gemini-2.0-flash-001';
 
   if (!apiKey) throw new Error('No API key');
 
@@ -394,7 +398,7 @@ async function requestOneLiner(systemPrompt, userMessage, label) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
       model,
@@ -430,10 +434,13 @@ async function requestOneLiner(systemPrompt, userMessage, label) {
 
   // 3. Clean up: strip quotes, take only first line
   if (line) {
-    line = line.replace(/^["']|["']$/g, '').split('\n')[0].trim();
+    line = line
+      .replace(/^["']|["']$/g, '')
+      .split('\n')[0]
+      .trim();
     // If still too long (reasoning leak), take last short sentence
     if (line.length > 200) {
-      const sentences = line.split(/(?<=[.!?"])\s+/).filter(s => s.length > 5 && s.length < 150);
+      const sentences = line.split(/(?<=[.!?"])\s+/).filter((s) => s.length > 5 && s.length < 150);
       line = sentences.length > 0 ? sentences[sentences.length - 1] : line.slice(0, 150);
     }
   }
@@ -517,7 +524,7 @@ app.post('/api/logs/clear', logsClearLimiter, (_req, res) => {
   recentRequests.length = 0;
   try {
     fs.writeFileSync(LOG_FILE, '');
-  } catch (_) {}
+  } catch {}
   res.json({ ok: true });
 });
 
@@ -549,33 +556,53 @@ function saveGalaxy(galaxy) {
   const pointerPath = path.join(GALAXIES_DIR, 'current.json');
   fs.writeFileSync(pointerPath, JSON.stringify({ galaxyId: galaxy.galaxyId, path: galaxyPath }));
   currentGalaxy = galaxy;
-  console.log(`[Galaxy] Saved galaxy "${galaxy.name}" (${galaxy.planets.length} planets), expires ${galaxy.expiresAt}`);
+  console.log(
+    `[Galaxy] Saved galaxy "${galaxy.name}" (${galaxy.planets.length} planets), expires ${galaxy.expiresAt}`,
+  );
 }
 
 function listGalaxyHistory() {
   try {
-    const files = fs.readdirSync(GALAXIES_DIR).filter(f => f !== 'current.json' && f.endsWith('.json'));
-    return files.map(f => {
-      try {
-        const g = JSON.parse(fs.readFileSync(path.join(GALAXIES_DIR, f), 'utf-8'));
-        return { galaxyId: g.galaxyId, name: g.name, createdAt: g.createdAt, planetCount: g.planets?.length || 0 };
-      } catch { return null; }
-    }).filter(Boolean).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  } catch { return []; }
+    const files = fs
+      .readdirSync(GALAXIES_DIR)
+      .filter((f) => f !== 'current.json' && f.endsWith('.json'));
+    return files
+      .map((f) => {
+        try {
+          const g = JSON.parse(fs.readFileSync(path.join(GALAXIES_DIR, f), 'utf-8'));
+          return {
+            galaxyId: g.galaxyId,
+            name: g.name,
+            createdAt: g.createdAt,
+            planetCount: g.planets?.length || 0,
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  } catch {
+    return [];
+  }
 }
 
 function collectUsedPlanetNames() {
   try {
-    const files = fs.readdirSync(GALAXIES_DIR).filter(f => f !== 'current.json' && f.endsWith('.json'));
+    const files = fs
+      .readdirSync(GALAXIES_DIR)
+      .filter((f) => f !== 'current.json' && f.endsWith('.json'));
     const names = new Set();
     for (const f of files) {
       try {
         const g = JSON.parse(fs.readFileSync(path.join(GALAXIES_DIR, f), 'utf-8'));
-        if (g.planets) g.planets.forEach(p => names.add(p.name));
+        if (g.planets) g.planets.forEach((p) => names.add(p.name));
       } catch {}
     }
     return [...names];
-  } catch { return []; }
+  } catch {
+    return [];
+  }
 }
 
 async function generateGalaxy() {
@@ -586,7 +613,10 @@ async function generateGalaxy() {
   galaxyGenerating = true;
 
   const apiKey = process.env.OPENROUTER_API_KEY;
-  const model = process.env.GALAXY_OPENROUTER_MODEL || process.env.OPENROUTER_MODEL || 'google/gemini-2.0-flash-001';
+  const model =
+    process.env.GALAXY_OPENROUTER_MODEL ||
+    process.env.OPENROUTER_MODEL ||
+    'google/gemini-2.0-flash-001';
 
   if (!apiKey) {
     console.error('[Galaxy] No OPENROUTER_API_KEY configured');
@@ -609,13 +639,16 @@ async function generateGalaxy() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
         model,
         messages: [
           { role: 'system', content: buildGalaxyPrompt(usedNames) },
-          { role: 'user', content: 'Generate the galaxy now. Return valid JSON only, no markdown.' },
+          {
+            role: 'user',
+            content: 'Generate the galaxy now. Return valid JSON only, no markdown.',
+          },
         ],
         response_format: { type: 'json_object' },
       }),
@@ -668,13 +701,16 @@ async function generateGalaxy() {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${apiKey}`,
+            Authorization: `Bearer ${apiKey}`,
           },
           body: JSON.stringify({
             model,
             messages: [
               { role: 'system', content: buildGalaxyPrompt(usedNames) },
-              { role: 'user', content: buildContinuationPrompt(galaxy.planets.length, lastPlanet.name) },
+              {
+                role: 'user',
+                content: buildContinuationPrompt(galaxy.planets.length, lastPlanet.name),
+              },
             ],
             response_format: { type: 'json_object' },
           }),
@@ -716,11 +752,15 @@ async function generateGalaxy() {
     }
 
     saveGalaxy(galaxy);
-    console.log(`[Galaxy] Ready! "${galaxy.name}" with ${galaxy.planets.length} planets (id: ${galaxy.galaxyId})`);
+    console.log(
+      `[Galaxy] Ready! "${galaxy.name}" with ${galaxy.planets.length} planets (id: ${galaxy.galaxyId})`,
+    );
     galaxyGenerating = false;
     return galaxy;
   } catch (err) {
-    console.error(`[Galaxy] Generation error: ${err.name === 'AbortError' ? 'Request timed out after ' + (TIMEOUT_MS / 1000) + 's' : err.message}`);
+    console.error(
+      `[Galaxy] Generation error: ${err.name === 'AbortError' ? 'Request timed out after ' + TIMEOUT_MS / 1000 + 's' : err.message}`,
+    );
     galaxyGenerating = false;
     return null;
   }
@@ -731,7 +771,12 @@ const galaxyLimiter = rateLimit({ windowMs: 5 * 60 * 1000, max: 2 });
 app.post('/api/galaxy/generate', galaxyLimiter, async (_req, res) => {
   const galaxy = await generateGalaxy();
   if (galaxy) {
-    res.json({ ok: true, galaxyId: galaxy.galaxyId, name: galaxy.name, planetCount: galaxy.planets.length });
+    res.json({
+      ok: true,
+      galaxyId: galaxy.galaxyId,
+      name: galaxy.name,
+      planetCount: galaxy.planets.length,
+    });
   } else {
     res.status(500).json({ error: 'Galaxy generation failed' });
   }
@@ -753,10 +798,14 @@ app.get('/api/galaxy/history', (_req, res) => {
 
 // Leaderboard endpoints
 app.post('/api/leaderboard/submit', (req, res) => {
-  const { galaxyId, playerId, playerName, highestStage, totalJumps, timeMs, humanTourist } = req.body;
-  if (!galaxyId || !playerId) return res.status(400).json({ error: 'Missing galaxyId or playerId' });
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId)) return res.status(400).json({ error: 'Invalid galaxyId' });
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(playerId)) return res.status(400).json({ error: 'Invalid playerId' });
+  const { galaxyId, playerId, playerName, highestStage, totalJumps, timeMs, humanTourist } =
+    req.body;
+  if (!galaxyId || !playerId)
+    return res.status(400).json({ error: 'Missing galaxyId or playerId' });
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId))
+    return res.status(400).json({ error: 'Invalid galaxyId' });
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(playerId))
+    return res.status(400).json({ error: 'Invalid playerId' });
 
   const lbPath = path.join(LEADERBOARDS_DIR, `${galaxyId}.json`);
   let entries = [];
@@ -764,7 +813,7 @@ app.post('/api/leaderboard/submit', (req, res) => {
     if (fs.existsSync(lbPath)) entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8'));
   } catch {}
 
-  const existing = entries.findIndex(e => e.playerId === playerId);
+  const existing = entries.findIndex((e) => e.playerId === playerId);
   const entry = {
     playerId,
     playerName: String(playerName || 'Anonymous').slice(0, 30),
@@ -797,11 +846,11 @@ app.post('/api/leaderboard/submit', (req, res) => {
     fs.writeFileSync(lbPath, JSON.stringify(entries, null, 2));
   } catch {}
 
-  res.json({ ok: true, rank: entries.findIndex(e => e.playerId === playerId) + 1 });
+  res.json({ ok: true, rank: entries.findIndex((e) => e.playerId === playerId) + 1 });
 });
 
 function aggregateLeaderboard(filterFn) {
-  const files = fs.readdirSync(LEADERBOARDS_DIR).filter(f => f.endsWith('.json'));
+  const files = fs.readdirSync(LEADERBOARDS_DIR).filter((f) => f.endsWith('.json'));
   const galaxies = listGalaxyHistory();
   const galaxyMap = {};
   for (const g of galaxies) galaxyMap[g.galaxyId] = g;
@@ -845,7 +894,7 @@ app.get('/api/leaderboard/all-time', (_req, res) => {
 // Tourist runs: all-time but filtered to humanTourist entries only
 app.get('/api/leaderboard/tourist', (_req, res) => {
   try {
-    res.json(aggregateLeaderboard(e => e.humanTourist));
+    res.json(aggregateLeaderboard((e) => e.humanTourist));
   } catch {
     res.json([]);
   }
@@ -854,7 +903,7 @@ app.get('/api/leaderboard/tourist', (_req, res) => {
 // Note: /history must be before /:galaxyId to avoid param capture
 app.get('/api/leaderboard/history', (_req, res) => {
   const galaxies = listGalaxyHistory();
-  const result = galaxies.map(g => {
+  const result = galaxies.map((g) => {
     const lbPath = path.join(LEADERBOARDS_DIR, `${g.galaxyId}.json`);
     let entries = [];
     try {
@@ -870,7 +919,8 @@ app.get('/api/leaderboard/history', (_req, res) => {
 app.get('/api/leaderboard/:galaxyId', (req, res) => {
   let galaxyId = req.params.galaxyId;
   if (galaxyId === 'current' && currentGalaxy) galaxyId = currentGalaxy.galaxyId;
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId)) return res.status(400).json({ error: 'Invalid galaxyId' });
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId))
+    return res.status(400).json({ error: 'Invalid galaxyId' });
   const lbPath = path.join(LEADERBOARDS_DIR, `${galaxyId}.json`);
   try {
     if (fs.existsSync(lbPath)) {
@@ -890,7 +940,12 @@ const MAX_MCP_SESSIONS = 10;
 function getMCPSession(sessionId) {
   if (!mcpSessions.has(sessionId)) {
     if (mcpSessions.size >= MAX_MCP_SESSIONS) return null;
-    mcpSessions.set(sessionId, { browserWs: null, pendingRequests: new Map(), transport: null, server: null });
+    mcpSessions.set(sessionId, {
+      browserWs: null,
+      pendingRequests: new Map(),
+      transport: null,
+      server: null,
+    });
   }
   return mcpSessions.get(sessionId);
 }
@@ -917,41 +972,73 @@ function createMCPServer(sessionId) {
     version: '1.0.0',
   });
 
-  mcpServer.tool('get_state', 'Get the current game state including phase, stage, platform, player position, planet info, and physics parameters', {}, async () => {
-    try {
-      const result = await sendMCPCommand(sessionId, 'get_state', {});
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-    } catch (e) {
-      return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }], isError: true };
-    }
-  });
+  mcpServer.tool(
+    'get_state',
+    'Get the current game state including phase, stage, platform, player position, planet info, and physics parameters',
+    {},
+    async () => {
+      try {
+        const result = await sendMCPCommand(sessionId, 'get_state', {});
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      } catch (e) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }],
+          isError: true,
+        };
+      }
+    },
+  );
 
-  mcpServer.tool('jump', 'Execute a jump with the given power (0.0 to 1.0). The character charges and jumps right. Higher power = further and higher arc. Returns the outcome: landed, died, or victory.', { power: z.number().describe('Jump power from 0.0 (tiny hop) to 1.0 (maximum launch)') }, async ({ power }) => {
-    try {
-      const result = await sendMCPCommand(sessionId, 'jump', { power });
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-    } catch (e) {
-      return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }], isError: true };
-    }
-  });
+  mcpServer.tool(
+    'jump',
+    'Execute a jump with the given power (0.0 to 1.0). The character charges and jumps right. Higher power = further and higher arc. Returns the outcome: landed, died, or victory.',
+    { power: z.number().describe('Jump power from 0.0 (tiny hop) to 1.0 (maximum launch)') },
+    async ({ power }) => {
+      try {
+        const result = await sendMCPCommand(sessionId, 'jump', { power });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      } catch (e) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }],
+          isError: true,
+        };
+      }
+    },
+  );
 
   mcpServer.tool('restart', 'Restart the game from the beginning', {}, async () => {
     try {
       const result = await sendMCPCommand(sessionId, 'restart', {});
       return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
     } catch (e) {
-      return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }], isError: true };
+      return {
+        content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }],
+        isError: true,
+      };
     }
   });
 
-  mcpServer.tool('get_platforms', 'Get positions and sizes of current and upcoming platforms. Use this to calculate the optimal jump power.', { count: z.number().optional().describe('Number of platforms to return (starting from current). Default: 3') }, async ({ count }) => {
-    try {
-      const result = await sendMCPCommand(sessionId, 'get_platforms', { count: count || 3 });
-      return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
-    } catch (e) {
-      return { content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }], isError: true };
-    }
-  });
+  mcpServer.tool(
+    'get_platforms',
+    'Get positions and sizes of current and upcoming platforms. Use this to calculate the optimal jump power.',
+    {
+      count: z
+        .number()
+        .optional()
+        .describe('Number of platforms to return (starting from current). Default: 3'),
+    },
+    async ({ count }) => {
+      try {
+        const result = await sendMCPCommand(sessionId, 'get_platforms', { count: count || 3 });
+        return { content: [{ type: 'text', text: JSON.stringify(result, null, 2) }] };
+      } catch (e) {
+        return {
+          content: [{ type: 'text', text: JSON.stringify({ error: e.message }) }],
+          isError: true,
+        };
+      }
+    },
+  );
 
   return mcpServer;
 }
@@ -996,7 +1083,10 @@ app.post('/mcp/:sessionId', async (req, res) => {
     console.error(`[MCP] POST error (${sessionId}):`, err.message);
     // Reset so next request gets a fresh transport
     const session = mcpSessions.get(sessionId);
-    if (session) { session.transport = null; session.server = null; }
+    if (session) {
+      session.transport = null;
+      session.server = null;
+    }
     if (!res.headersSent) {
       res.status(500).json({ error: err.message });
     }
@@ -1022,7 +1112,7 @@ app.delete('/mcp/:sessionId', async (req, res) => {
   if (session && session.transport) {
     try {
       await session.transport.handleRequest(req, res);
-    } catch (_) {
+    } catch {
       if (!res.headersSent) res.json({ ok: true });
     }
     mcpSessions.delete(sessionId);
@@ -1072,7 +1162,7 @@ wss.on('connection', (ws) => {
           }
         }
       }
-    } catch (e) {}
+    } catch {}
   });
 
   ws.on('close', () => {
@@ -1082,8 +1172,8 @@ wss.on('connection', (ws) => {
       // Broadcast leave to same galaxy+stage players
       for (const [otherWs, otherPlayer] of players) {
         const sameGroup = p.galaxyId
-          ? (otherPlayer.galaxyId === p.galaxyId && otherPlayer.stageIndex === p.stageIndex)
-          : (otherPlayer.stageIndex === p.stageIndex);
+          ? otherPlayer.galaxyId === p.galaxyId && otherPlayer.stageIndex === p.stageIndex
+          : otherPlayer.stageIndex === p.stageIndex;
         if (sameGroup && otherWs.readyState === 1) {
           otherWs.send(JSON.stringify({ type: 'leave', id: p.id }));
         }
@@ -1139,7 +1229,9 @@ if (require.main === module) {
   server.listen(PORT, () => {
     console.log(`Planetary Jumper server running at http://localhost:${PORT}`);
     // Check galaxy on startup
-    checkGalaxyRotation().catch(err => console.error('[Galaxy] Startup check failed:', err.message));
+    checkGalaxyRotation().catch((err) =>
+      console.error('[Galaxy] Startup check failed:', err.message),
+    );
   });
 }
 

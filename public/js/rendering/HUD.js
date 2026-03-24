@@ -26,11 +26,11 @@ export class HUD {
 
   /** Update planet display — replaces updateStage. */
   updatePlanet(planetConfig, totalStages) {
-    const total = totalStages || 10;
+    const _total = totalStages || 10;
     const isDefault = planetConfig && planetConfig._isDefault;
     const warnSuffix = isDefault ? ' ⚠' : '';
     if (this.stageEl && planetConfig) {
-      const index = this._getPlanetIndex(planetConfig);
+      const _index = this._getPlanetIndex(planetConfig);
       this.stageEl.textContent = planetConfig.name + warnSuffix;
       this.stageEl.title = isDefault ? 'Fallback planet — daily galaxy unavailable' : '';
     }
@@ -51,7 +51,18 @@ export class HUD {
     // If planetConfig has a stageIndex set, use it directly
     if (planetConfig._stageIndex != null) return planetConfig._stageIndex;
     // Simple lookup by name from the hardcoded configs
-    const names = ['Earth', 'Stratosphere', 'Moon', 'Mars', 'Mercury', 'Venus', 'Titan', 'Jupiter', 'Europa', 'Pluto'];
+    const names = [
+      'Earth',
+      'Stratosphere',
+      'Moon',
+      'Mars',
+      'Mercury',
+      'Venus',
+      'Titan',
+      'Jupiter',
+      'Europa',
+      'Pluto',
+    ];
     const idx = names.indexOf(planetConfig.name);
     return idx >= 0 ? idx : 0;
   }

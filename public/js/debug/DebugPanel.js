@@ -22,9 +22,17 @@ export class DebugPanel {
     this._analytics.subscribe((event) => this._onEvent(event));
   }
 
-  show() { this._visible = true; this._el.classList.remove('hidden'); }
-  hide() { this._visible = false; this._el.classList.add('hidden'); }
-  toggle() { this._visible ? this.hide() : this.show(); }
+  show() {
+    this._visible = true;
+    this._el.classList.remove('hidden');
+  }
+  hide() {
+    this._visible = false;
+    this._el.classList.add('hidden');
+  }
+  toggle() {
+    this._visible ? this.hide() : this.show();
+  }
 
   _render() {
     this._el.innerHTML = '';
@@ -41,7 +49,10 @@ export class DebugPanel {
     const tabs = this._ce('div', 'debug-tabs');
     ['Log', 'LLM', 'Stage', 'Controls'].forEach((name, i) => {
       const btn = this._ce('button', 'debug-tab' + (i === this._activeTab ? ' active' : ''), name);
-      btn.onclick = () => { this._activeTab = i; this._renderContent(); };
+      btn.onclick = () => {
+        this._activeTab = i;
+        this._renderContent();
+      };
       tabs.appendChild(btn);
     });
     this._el.appendChild(tabs);
@@ -56,7 +67,12 @@ export class DebugPanel {
       btn.classList.toggle('active', i === this._activeTab);
     });
     this._contentEl.innerHTML = '';
-    [this._renderLogStream, this._renderLLMDashboard, this._renderStageInspector, this._renderDevControls][this._activeTab].call(this);
+    [
+      this._renderLogStream,
+      this._renderLLMDashboard,
+      this._renderStageInspector,
+      this._renderDevControls,
+    ][this._activeTab].call(this);
   }
 
   // ── Log Stream ──────────────────────────────────
@@ -69,35 +85,45 @@ export class DebugPanel {
     const cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.checked = this._autoScroll;
-    cb.onchange = () => { this._autoScroll = cb.checked; };
+    cb.onchange = () => {
+      this._autoScroll = cb.checked;
+    };
     scrollToggle.appendChild(cb);
     scrollToggle.appendChild(document.createTextNode('Auto-scroll'));
     c.appendChild(scrollToggle);
 
     // Filters
     const filters = this._ce('div', 'debug-filters');
-    ['all', 'llm', 'stage', 'player', 'game'].forEach(f => {
-      const btn = this._ce('button',
+    ['all', 'llm', 'stage', 'player', 'game'].forEach((f) => {
+      const btn = this._ce(
+        'button',
         'debug-filter-btn' + (this._logFilter === f ? ' active' : ''),
-        f.toUpperCase());
-      btn.onclick = () => { this._logFilter = f; this._renderContent(); };
+        f.toUpperCase(),
+      );
+      btn.onclick = () => {
+        this._logFilter = f;
+        this._renderContent();
+      };
       filters.appendChild(btn);
     });
     c.appendChild(filters);
 
     // Log list
     this._logListEl = this._ce('div', 'debug-log-list');
-    const events = this._logFilter === 'all'
-      ? this._analytics.getEvents()
-      : this._analytics.getEvents(this._logFilter);
+    const events =
+      this._logFilter === 'all'
+        ? this._analytics.getEvents()
+        : this._analytics.getEvents(this._logFilter);
 
-    events.slice(-100).forEach(evt => {
+    events.slice(-100).forEach((evt) => {
       this._logListEl.appendChild(this._makeLogEntry(evt));
     });
     c.appendChild(this._logListEl);
 
     if (this._autoScroll) {
-      requestAnimationFrame(() => { c.scrollTop = c.scrollHeight; });
+      requestAnimationFrame(() => {
+        c.scrollTop = c.scrollHeight;
+      });
     }
   }
 
@@ -109,7 +135,10 @@ export class DebugPanel {
     el.appendChild(document.createTextNode(` ${evt.type}`));
     el.onclick = () => {
       const existing = el.querySelector('.debug-log-detail');
-      if (existing) { existing.remove(); return; }
+      if (existing) {
+        existing.remove();
+        return;
+      }
       el.appendChild(this._ce('div', 'debug-log-detail', JSON.stringify(evt.data, null, 2)));
     };
     return el;
@@ -126,12 +155,17 @@ export class DebugPanel {
     [
       { label: 'Requests', value: s.totalRequests },
       { label: 'Latency', value: s.avgLatency ? s.avgLatency + 'ms' : '--' },
-      { label: 'Success', value: s.totalRequests > 0
-        ? Math.round(s.successfulResponses / s.totalRequests * 100) + '%' : '--' },
+      {
+        label: 'Success',
+        value:
+          s.totalRequests > 0
+            ? Math.round((s.successfulResponses / s.totalRequests) * 100) + '%'
+            : '--',
+      },
       { label: 'LLM', value: s.llmStages },
       { label: 'Default', value: s.defaultStages },
       { label: 'Errors', value: s.errors },
-    ].forEach(stat => {
+    ].forEach((stat) => {
       const el = this._ce('div', 'debug-stat');
       el.innerHTML = `<span class="label">${stat.label}</span><span class="value">${stat.value}</span>`;
       grid.appendChild(el);
@@ -158,7 +192,7 @@ export class DebugPanel {
     if (llmEvents.length > 0) {
       c.appendChild(this._ce('div', 'debug-section-label', 'Client Events'));
       const list = this._ce('div', 'debug-request-list');
-      llmEvents.slice(-20).forEach(evt => {
+      llmEvents.slice(-20).forEach((evt) => {
         const el = this._ce('div', 'debug-request');
         const hdr = this._ce('div', 'req-header');
         hdr.appendChild(this._ce('span', 'req-stage', `Stage ${evt.data.stage || '?'}`));
@@ -174,7 +208,10 @@ export class DebugPanel {
         el.appendChild(hdr);
         el.onclick = () => {
           const d = el.querySelector('.debug-log-detail');
-          if (d) { d.remove(); return; }
+          if (d) {
+            d.remove();
+            return;
+          }
           el.appendChild(this._ce('div', 'debug-log-detail', JSON.stringify(evt.data, null, 2)));
         };
         list.appendChild(el);
@@ -192,20 +229,27 @@ export class DebugPanel {
       this._serverLogEl.appendChild(empty);
       return;
     }
-    logs.forEach(log => {
+    logs.forEach((log) => {
       const el = this._ce('div', 'debug-request');
       const hdr = this._ce('div', 'req-header');
       hdr.appendChild(this._ce('span', 'req-stage', `Stage ${log.stage || '?'}`));
-      hdr.appendChild(this._ce('span',
-        log.error ? 'req-error' : 'req-latency',
-        log.error ? 'ERROR' : log.latencyMs + 'ms'));
+      hdr.appendChild(
+        this._ce(
+          'span',
+          log.error ? 'req-error' : 'req-latency',
+          log.error ? 'ERROR' : log.latencyMs + 'ms',
+        ),
+      );
       el.appendChild(hdr);
       if (log.model) {
         el.appendChild(this._ce('div', 'req-model', log.model));
       }
       el.onclick = () => {
         const d = el.querySelector('.debug-log-detail');
-        if (d) { d.remove(); return; }
+        if (d) {
+          d.remove();
+          return;
+        }
         el.appendChild(this._ce('div', 'debug-log-detail', JSON.stringify(log, null, 2)));
       };
       this._serverLogEl.appendChild(el);
@@ -222,26 +266,36 @@ export class DebugPanel {
     const select = this._ce('div', 'debug-stage-select');
     for (let i = 0; i < PLANET_CONFIGS.length; i++) {
       const source = this._game.difficulty.getConfigSource(i);
-      const btn = this._ce('button',
+      const btn = this._ce(
+        'button',
         'debug-stage-btn' + (i === si ? ' active' : '') + (source === 'llm' ? ' llm' : ''),
-        String(i + 1));
+        String(i + 1),
+      );
       btn.title = PLANET_CONFIGS[i].name;
-      btn.onclick = () => { this._inspectedStage = i; this._renderContent(); };
+      btn.onclick = () => {
+        this._inspectedStage = i;
+        this._renderContent();
+      };
       select.appendChild(btn);
     }
     c.appendChild(select);
 
     // Planet name label
     const planet = PLANET_CONFIGS[si];
-    c.appendChild(this._ce('div', 'debug-section-label', `${planet.name} \u2014 ${planet.atmosphereLabel}`));
+    c.appendChild(
+      this._ce('div', 'debug-section-label', `${planet.name} \u2014 ${planet.atmosphereLabel}`),
+    );
 
     // Config comparison
     const compare = this._ce('div', 'debug-config-compare');
     const defaultCfg = {
-      minW: planet.minW, maxW: planet.maxW,
-      minGap: planet.minGap, maxGap: planet.maxGap,
+      minW: planet.minW,
+      maxW: planet.maxW,
+      minGap: planet.minGap,
+      maxGap: planet.maxGap,
       yOffset: planet.yOffset,
-      minRise: planet.minRise, maxRise: planet.maxRise,
+      minRise: planet.minRise,
+      maxRise: planet.maxRise,
     };
     const currentCfg = this._game.difficulty.getStageConfig(si);
 
@@ -272,15 +326,20 @@ export class DebugPanel {
     // Per-platform specs (if LLM provided them)
     const platformSpecs = this._game.difficulty.getPlatformSpecs(si);
     if (platformSpecs) {
-      c.appendChild(this._ce('div', 'debug-section-label', `Per-Platform Specs (${platformSpecs.length})`));
+      c.appendChild(
+        this._ce('div', 'debug-section-label', `Per-Platform Specs (${platformSpecs.length})`),
+      );
       const specsBox = this._ce('div', 'debug-metrics-box');
       const specsHeader = this._ce('div', 'debug-config-row');
-      specsHeader.innerHTML = '<span><b>#</b></span><span><b>W</b></span><span><b>Gap</b></span><span><b>Rise</b></span><span><b>yOff</b></span><span><b>Pow</b></span>';
-      specsHeader.style.cssText = 'display:grid;grid-template-columns:1fr 2fr 2fr 2fr 2fr 2fr;gap:2px;font-size:10px';
+      specsHeader.innerHTML =
+        '<span><b>#</b></span><span><b>W</b></span><span><b>Gap</b></span><span><b>Rise</b></span><span><b>yOff</b></span><span><b>Pow</b></span>';
+      specsHeader.style.cssText =
+        'display:grid;grid-template-columns:1fr 2fr 2fr 2fr 2fr 2fr;gap:2px;font-size:10px';
       specsBox.appendChild(specsHeader);
       platformSpecs.forEach((spec, idx) => {
         const row = this._ce('div', 'debug-config-row');
-        row.style.cssText = 'display:grid;grid-template-columns:1fr 2fr 2fr 2fr 2fr 2fr;gap:2px;font-size:10px';
+        row.style.cssText =
+          'display:grid;grid-template-columns:1fr 2fr 2fr 2fr 2fr 2fr;gap:2px;font-size:10px';
         row.innerHTML = `<span>${idx + 1}</span><span>${Math.round(spec.width)}</span><span>${Math.round(spec.gap)}</span><span>${Math.round(spec.rise)}</span><span>${Math.round(spec.yOffset)}</span><span>${spec.powerExponent.toFixed(1)}</span>`;
         specsBox.appendChild(row);
       });
@@ -327,12 +386,21 @@ export class DebugPanel {
     const autoGroup = this._ce('div', 'debug-control-group');
     autoGroup.appendChild(this._ce('label', '', 'Auto-Play'));
     const autoRow = this._ce('div', 'debug-btn-row');
-    const startBtn = this._ce('button',
-      'debug-btn' + (this._game._autoPlay ? ' active' : ''), 'Start');
-    startBtn.onclick = () => { this._game.startAutoPlay(); this._renderContent(); };
+    const startBtn = this._ce(
+      'button',
+      'debug-btn' + (this._game._autoPlay ? ' active' : ''),
+      'Start',
+    );
+    startBtn.onclick = () => {
+      this._game.startAutoPlay();
+      this._renderContent();
+    };
     autoRow.appendChild(startBtn);
     const stopBtn = this._ce('button', 'debug-btn danger', 'Stop');
-    stopBtn.onclick = () => { this._game.stopAutoPlay(); this._renderContent(); };
+    stopBtn.onclick = () => {
+      this._game.stopAutoPlay();
+      this._renderContent();
+    };
     autoRow.appendChild(stopBtn);
     autoGroup.appendChild(autoRow);
     controls.appendChild(autoGroup);
@@ -341,10 +409,16 @@ export class DebugPanel {
     const speedGroup = this._ce('div', 'debug-control-group');
     speedGroup.appendChild(this._ce('label', '', 'Speed'));
     const speedRow = this._ce('div', 'debug-btn-row');
-    [0.5, 1, 2, 5].forEach(m => {
-      const btn = this._ce('button',
-        'debug-btn' + (this._game._speedMult === m ? ' active' : ''), m + 'x');
-      btn.onclick = () => { this._game.setSpeedMultiplier(m); this._renderContent(); };
+    [0.5, 1, 2, 5].forEach((m) => {
+      const btn = this._ce(
+        'button',
+        'debug-btn' + (this._game._speedMult === m ? ' active' : ''),
+        m + 'x',
+      );
+      btn.onclick = () => {
+        this._game.setSpeedMultiplier(m);
+        this._renderContent();
+      };
       speedRow.appendChild(btn);
     });
     speedGroup.appendChild(speedRow);
@@ -370,9 +444,15 @@ export class DebugPanel {
     this._addFlashBtn(utilRow, 'Export Logs', 'Copied', () => {
       return navigator.clipboard.writeText(this._analytics.exportJSON());
     });
-    this._addFlashBtn(utilRow, 'Clear Logs', 'Cleared', () => {
-      return fetch('/api/logs/clear', { method: 'POST' });
-    }, true);
+    this._addFlashBtn(
+      utilRow,
+      'Clear Logs',
+      'Cleared',
+      () => {
+        return fetch('/api/logs/clear', { method: 'POST' });
+      },
+      true,
+    );
     this._addFlashBtn(utilRow, 'Push State', 'Pushed', () => {
       return this._analytics.pushToServer();
     });
@@ -387,7 +467,9 @@ export class DebugPanel {
     btn.onclick = async () => {
       await action();
       btn.textContent = flashLabel;
-      setTimeout(() => { btn.textContent = label; }, 1200);
+      setTimeout(() => {
+        btn.textContent = label;
+      }, 1200);
     };
     container.appendChild(btn);
   }
