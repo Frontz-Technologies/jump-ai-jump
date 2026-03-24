@@ -611,17 +611,19 @@ export class Game {
   }
 
   _getActivePlanet() {
+    // Apply tourist gravity clamp before powerExponent overrides
+    const basePlanet = this.difficulty.getTouristPlanet(this.currentPlanet);
     // Try per-platform powerExponent first, then stage-level
     const platformInStage = this.currentPlatformIndex % PLATFORMS_PER_STAGE;
     const spec = this.difficulty.getPlatformSpec(this.stageIndex, platformInStage);
     if (spec && spec.powerExponent != null) {
-      return { ...this.currentPlanet, powerExponent: spec.powerExponent };
+      return { ...basePlanet, powerExponent: spec.powerExponent };
     }
     const cfg = this.difficulty.getStageConfig(this.stageIndex);
     if (cfg.powerExponent != null) {
-      return { ...this.currentPlanet, powerExponent: cfg.powerExponent };
+      return { ...basePlanet, powerExponent: cfg.powerExponent };
     }
-    return this.currentPlanet;
+    return basePlanet;
   }
 
   _doJump(power) {
@@ -733,7 +735,7 @@ export class Game {
     if (char.state === CharState.AIRBORNE) {
       const prevY = char.y;
       const wind = this.difficulty.getStageWind(this.stageIndex);
-      applyPhysics(char, dt, this.currentPlanet, wind);
+      applyPhysics(char, dt, this.difficulty.getTouristPlanet(this.currentPlanet), wind);
 
       // Check landing — only current platform (fallback) and next
       const nextIdx = this.currentPlatformIndex + 1;

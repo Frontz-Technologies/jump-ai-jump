@@ -1,6 +1,13 @@
 import {
   PLANET_CONFIGS,
   PLATFORMS_PER_STAGE as _PLATFORMS_PER_STAGE,
+  SCALE,
+  EARTH_GRAVITY_PX,
+  BASE_MIN_VX,
+  BASE_MAX_VX,
+  BASE_MIN_VY,
+  BASE_MAX_VY,
+  BASE_TERMINAL_VY,
 } from '../data/PlanetConfig.js';
 import { LLMClient } from './LLMClient.js';
 
@@ -56,6 +63,31 @@ export class DifficultyManager {
 
   setHumanTouristMode(enabled) {
     this._humanTourist = enabled;
+  }
+
+  /**
+   * Clamp planet gravity to a playable range in tourist mode.
+   * Returns the planet unchanged if not in tourist mode or already in range.
+   * HUD still shows the real gReal — only physics values are adjusted.
+   */
+  getTouristPlanet(planet) {
+    if (!this._humanTourist) return planet;
+    const clampedG = Math.max(0.8, Math.min(15, planet.gReal));
+    if (clampedG === planet.gReal) return planet;
+    const gravity = Math.round(clampedG * SCALE);
+    const vs = Math.sqrt(gravity / EARTH_GRAVITY_PX);
+    return {
+      ...planet,
+      gravity,
+      velocityScale: vs,
+      minVX: BASE_MIN_VX * vs,
+      maxVX: BASE_MAX_VX * vs,
+      minVY: BASE_MIN_VY * vs,
+      maxVY: BASE_MAX_VY * vs,
+      terminalVY: BASE_TERMINAL_VY * vs,
+      gReal: planet.gReal,
+      _touristGravityClamped: true,
+    };
   }
 
   getStageConfig(stageIndex) {
