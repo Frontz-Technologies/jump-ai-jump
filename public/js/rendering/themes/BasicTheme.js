@@ -117,7 +117,7 @@ export class BasicTheme extends ThemeBase {
     ctx.fillRect(platform.x + 2, drawY + 2, platform.width - 4, 4);
   }
 
-  drawCharacter(ctx, character) {
+  drawCharacter(ctx, character, _sliding, _extra) {
     const cx = character.x + character.width / 2;
     const cy = character.y + character.height / 2;
 

@@ -26,6 +26,21 @@ export class Character {
     this._slideVx = 0;
     this._slidePlatform = null;
     this._footingDelay = 0;
+
+    // Visual state for expressive rendering
+    this.blinkTimer = 3 + Math.random() * 2;
+    this.blinkPhase = 0;
+    this.pupilDriftX = 0;
+    this.pupilDriftY = 0;
+    this._pupilTargetX = 0;
+    this._pupilTargetY = 0;
+    this._pupilRetargetTimer = 0;
+    this.afterimagePositions = [];
+    this.landingImpact = 0;
+    this.deathTimer = 0;
+    this.deathActive = false;
+    this.victoryTimer = 0;
+    this.victoryActive = false;
   }
 
   /** Snap character to stand on a platform. */
@@ -33,6 +48,7 @@ export class Character {
     this.y = platform.y - this.height;
     this.vy = 0;
     this._slidePlatform = platform;
+    this.landingImpact = 1.0;
 
     if (surfaceFriction < 1.0) {
       // Slippery: post-landing slide
@@ -148,5 +164,64 @@ export class Character {
     this.scaleX = 0.8;
     this.scaleY = 1.2;
     this._animTimer = 0.2;
+  }
+
+  /** Update visual state for expressive rendering (blink, pupil drift, afterimages, etc). */
+  updateVisualState(dt) {
+    // Blink timer
+    this.blinkTimer -= dt;
+    if (this.blinkTimer <= 0) {
+      this.blinkPhase = 0.15;
+      this.blinkTimer = 3 + Math.random() * 2;
+    }
+    if (this.blinkPhase > 0) {
+      this.blinkPhase = Math.max(0, this.blinkPhase - dt);
+    }
+
+    // Pupil drift (smooth random wander for idle)
+    this._pupilRetargetTimer -= dt;
+    if (this._pupilRetargetTimer <= 0) {
+      this._pupilTargetX = (Math.random() - 0.5) * 3;
+      this._pupilTargetY = (Math.random() - 0.5) * 2;
+      this._pupilRetargetTimer = 1.5 + Math.random() * 1.5;
+    }
+    this.pupilDriftX += (this._pupilTargetX - this.pupilDriftX) * dt * 3;
+    this.pupilDriftY += (this._pupilTargetY - this.pupilDriftY) * dt * 3;
+
+    // Landing impact decay
+    if (this.landingImpact > 0) {
+      this.landingImpact = Math.max(0, this.landingImpact - dt * 5);
+    }
+
+    // Death timer
+    if (this.deathActive) {
+      this.deathTimer += dt;
+    }
+
+    // Victory timer
+    if (this.victoryActive) {
+      this.victoryTimer += dt;
+    }
+
+    // Afterimage trail (only when airborne)
+    if (this.state === CharState.AIRBORNE) {
+      this.afterimagePositions.push({
+        x: this.x,
+        y: this.y,
+        scaleX: this.scaleX,
+        scaleY: this.scaleY,
+        opacity: 1.0,
+      });
+      if (this.afterimagePositions.length > 4) {
+        this.afterimagePositions.shift();
+      }
+    }
+    // Decay afterimage opacity and remove faded ones
+    for (let i = this.afterimagePositions.length - 1; i >= 0; i--) {
+      this.afterimagePositions[i].opacity -= dt * 3;
+      if (this.afterimagePositions[i].opacity <= 0) {
+        this.afterimagePositions.splice(i, 1);
+      }
+    }
   }
 }

@@ -10,7 +10,7 @@ export class ThemeBase {
   drawPlatform(_ctx, _platform, _index, _totalPlatforms, _personalBestIndex) {}
 
   /** @param {CanvasRenderingContext2D} ctx */
-  drawCharacter(_ctx, _character) {}
+  drawCharacter(_ctx, _character, _sliding, _extra) {}
 
   /** Draw a thought bubble above the character.
    * @param {CanvasRenderingContext2D} ctx

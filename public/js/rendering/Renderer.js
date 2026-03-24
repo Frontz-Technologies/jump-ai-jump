@@ -112,7 +112,10 @@ export class Renderer {
     }
 
     // Character
-    this.theme.drawCharacter(ctx, character, sliding);
+    this.theme.drawCharacter(ctx, character, sliding, {
+      power: options.power || 0,
+      planet: options.planet || null,
+    });
 
     // Thought bubble (legacy AI thinking)
     if (thoughtBubble) {
