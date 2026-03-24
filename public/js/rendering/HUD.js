@@ -1,3 +1,15 @@
+/** Planet body type to accent color mapping. */
+const PLANET_ACCENTS = {
+  earth_like: '#5ab8a0',
+  rocky: '#c4956a',
+  volcanic: '#e85d4a',
+  icy: '#80c8e0',
+  gas_giant: '#d4a84a',
+  hazy: '#c08040',
+  exotic: '#c490ff',
+  barren: '#8090a0',
+};
+
 /** Updates DOM-based HUD elements. */
 export class HUD {
   constructor() {
@@ -44,6 +56,12 @@ export class HUD {
     }
     if (this.atmoIndicatorEl && planetConfig) {
       this._updateAtmoIndicator(planetConfig.atmosphereLabel);
+    }
+    // Set planet-reactive accent color
+    if (planetConfig) {
+      const bodyType = planetConfig.bodyType || 'earth_like';
+      const accent = PLANET_ACCENTS[bodyType] || '#38e8d8';
+      document.documentElement.style.setProperty('--planet-accent', accent);
     }
   }
 

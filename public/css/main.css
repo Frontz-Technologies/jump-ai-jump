@@ -1,45 +1,31 @@
 :root {
-  --bg: #eceef2;
-  --text: #141428;
-  --text-secondary: #5a5a7a;
-  --text-muted: #8a8aa8;
-  --primary: #4ecdc4;
-  --primary-hover: #3abdb4;
-  --primary-subtle: rgba(78, 205, 196, 0.1);
-  --surface: #f6f7f9;
-  --surface-border: rgba(0, 0, 0, 0.08);
-  --line: rgba(0, 0, 0, 0.1);
-  --hud-bg: rgba(255, 255, 255, 0.8);
-  --overlay-bg: rgba(236, 238, 242, 0.96);
-  --shadow: rgba(0, 0, 0, 0.06);
-  --meter-bg: #dde0e6;
-  --meter-fill: #4ecdc4;
-  --meter-full: #ef4444;
-  --danger: #ef4444;
-  --success: #4ecdc4;
-  --muted: #8a8aa8;
-  --accent: #a78bfa;
-}
-
-[data-theme='dark'] {
-  --bg: #08081a;
-  --text: #e2e4ec;
-  --text-secondary: #8a8caa;
-  --text-muted: #5a5c7a;
-  --primary: #4ecdc4;
-  --primary-hover: #62dbd3;
-  --primary-subtle: rgba(78, 205, 196, 0.08);
-  --surface: #0e0e24;
-  --surface-border: rgba(255, 255, 255, 0.06);
-  --line: rgba(255, 255, 255, 0.08);
-  --hud-bg: rgba(8, 8, 26, 0.8);
-  --overlay-bg: rgba(8, 8, 26, 0.96);
+  --bg: #06060f;
+  --text: #e2e4f0;
+  --text-secondary: #7a7e9a;
+  --text-muted: #484c68;
+  --primary: #38e8d8;
+  --primary-hover: #5cf0e2;
+  --primary-subtle: rgba(56, 232, 216, 0.08);
+  --primary-glow: rgba(56, 232, 216, 0.25);
+  --surface: #0d0e1f;
+  --surface-elevated: #141530;
+  --surface-border: rgba(140, 160, 255, 0.06);
+  --line: rgba(140, 160, 255, 0.08);
+  --hud-bg: rgba(6, 6, 15, 0.6);
+  --hud-border: rgba(56, 232, 216, 0.12);
+  --overlay-bg: rgba(6, 6, 15, 0.94);
   --shadow: rgba(0, 0, 0, 0.5);
-  --meter-bg: #1a1a36;
-  --meter-fill: #4ecdc4;
-  --meter-full: #ef4444;
-  --muted: #5a5c7a;
-  --accent: #a78bfa;
+  --meter-bg: #1a1b30;
+  --meter-fill: #38e8d8;
+  --meter-full: #ff4d5e;
+  --danger: #ff4d5e;
+  --success: #38e8d8;
+  --warning: #f0c050;
+  --muted: #484c68;
+  --accent: #c490ff;
+  --accent-gold: #f0c050;
+  --accent-blue: #6cb4ff;
+  --planet-accent: #38e8d8;
 }
 
 .hidden {
@@ -116,9 +102,10 @@ body {
   flex-direction: column;
   align-items: center;
   pointer-events: none;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--hud-bg);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
+  border: 1px solid var(--hud-border);
   border-radius: 12px;
   padding: 8px 20px 10px;
   max-width: 180px;
@@ -283,7 +270,7 @@ body {
   gap: 16px;
   padding: 10px 16px;
   font-size: 11px;
-  background: rgba(0, 0, 0, 0.4);
+  background: var(--hud-bg);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   z-index: 10;
@@ -512,6 +499,7 @@ body {
 
 .primary-btn:hover {
   background: var(--primary-hover);
+  box-shadow: 0 0 20px var(--primary-glow);
 }
 
 .primary-btn:active {
