@@ -1,6 +1,7 @@
 import { ThemeBase } from './ThemeBase.js';
 import { PLANET_CONFIGS, PLATFORMS_PER_STAGE } from '../../data/PlanetConfig.js';
 import { BODY_TYPE_RENDERERS } from './ProceduralBackgrounds.js';
+import { CharState } from '../../entities/Character.js';
 
 /**
  * Seeded PRNG for consistent star positions per level.
@@ -753,62 +754,594 @@ export class PlanetaryTheme extends ThemeBase {
     ctx.restore();
   }
 
-  // --- Character (reuse BasicTheme's approach) ---
+  // --- Character (expressive creature with limbs, eyes, particles) ---
 
-  drawCharacter(ctx, character, sliding) {
-    const cx = character.x + character.width / 2;
-    const cy = character.y + character.height / 2;
+  drawCharacter(ctx, character, sliding, extra = {}) {
+    const power = extra.power || 0;
+    const planet = extra.planet || null;
 
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.scale(character.scaleX, character.scaleY);
+    // Afterimages (drawn behind character)
+    this._drawAfterimages(ctx, character);
 
-    const hw = character.width / 2;
-    const hh = character.height / 2;
-
-    // Body
-    ctx.fillStyle = this.colors.character;
-    ctx.strokeStyle = this.colors.characterStroke;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.roundRect(-hw, -hh, character.width, character.height, 8);
-    ctx.fill();
-    ctx.stroke();
-
-    // Eyes
-    const eyeY = -5;
-    const eyeSpacing = 8;
-    ctx.fillStyle = this.colors.eyes;
-    ctx.beginPath();
-    ctx.arc(-eyeSpacing, eyeY, 5, 0, Math.PI * 2);
-    ctx.arc(eyeSpacing, eyeY, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Pupils
-    const pupilOffset = character.vx > 0 ? 2 : 0;
-    ctx.fillStyle = this.colors.pupils;
-    ctx.beginPath();
-    ctx.arc(-eyeSpacing + pupilOffset, eyeY, 2.5, 0, Math.PI * 2);
-    ctx.arc(eyeSpacing + pupilOffset, eyeY, 2.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Mouth
-    ctx.strokeStyle = this.colors.characterStroke;
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    if (character.vy > 100) {
-      ctx.arc(0, 7, 5, 0, Math.PI * 2);
-    } else {
-      ctx.arc(0, 5, 6, 0.1 * Math.PI, 0.9 * Math.PI);
-    }
-    ctx.stroke();
-
-    ctx.restore();
+    // Main character body with limbs and face
+    this._drawCharacterBody(ctx, character, extra);
 
     // Slide particles (drawn in world space, outside character transform)
     if (sliding && sliding.active) {
       this._drawSlideParticles(ctx, character, sliding);
     }
+
+    // Landing dust burst
+    this._drawLandingDust(ctx, character, planet);
+
+    // Charge energy orbiting particles
+    this._drawChargeParticles(ctx, character, power);
+  }
+
+  /** Determine the current animation state string from character properties. */
+  _getAnimState(character, power) {
+    if (character.deathActive) return 'death';
+    if (character.victoryActive) return 'victory';
+    if (character.state === CharState.CHARGING) {
+      if (power > 0.66) return 'charge-high';
+      if (power > 0.33) return 'charge-mid';
+      return 'charge-low';
+    }
+    if (character.state === CharState.AIRBORNE) {
+      if (character.vy < -50) return 'rising';
+      if (character.vy > 50) return 'falling';
+      return 'peak';
+    }
+    if (character.state === CharState.SLIDING) return 'sliding';
+    return 'idle';
+  }
+
+  /** Draw faded afterimage copies when airborne. */
+  _drawAfterimages(ctx, character) {
+    if (!character.afterimagePositions || character.afterimagePositions.length === 0) return;
+    for (const img of character.afterimagePositions) {
+      ctx.save();
+      ctx.globalAlpha = img.opacity * 0.35;
+      const icx = img.x + character.width / 2;
+      const icy = img.y + character.height / 2;
+      ctx.translate(icx, icy);
+      ctx.scale(img.scaleX, img.scaleY);
+      const hw = character.width / 2;
+      const hh = character.height / 2;
+      ctx.fillStyle = this.colors.character;
+      ctx.beginPath();
+      ctx.roundRect(-hw, -hh, character.width, character.height, 8);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  /** Draw the full character: limbs, body, face, planet tint. */
+  _drawCharacterBody(ctx, character, extra) {
+    const power = extra.power || 0;
+    const planet = extra.planet || null;
+    const animState = this._getAnimState(character, power);
+
+    const cx = character.x + character.width / 2;
+    const cy = character.y + character.height / 2;
+    const hw = character.width / 2;
+    const hh = character.height / 2;
+    const t = performance.now() * 0.001;
+
+    ctx.save();
+    ctx.translate(cx, cy);
+
+    // Death: apply rotation and shrinking
+    if (animState === 'death') {
+      const dTimer = character.deathTimer;
+      const deathScale = Math.max(0.1, 1 - dTimer * 0.8);
+      ctx.rotate(dTimer * 8);
+      ctx.scale(deathScale, deathScale);
+      ctx.globalAlpha = Math.max(0, 1 - dTimer * 0.7);
+    }
+
+    ctx.scale(character.scaleX, character.scaleY);
+
+    // Charge shake at high power
+    let shakeX = 0;
+    let shakeY = 0;
+    if (animState === 'charge-high') {
+      shakeX = (Math.random() - 0.5) * 3;
+      shakeY = (Math.random() - 0.5) * 3;
+    }
+
+    // --- LEGS ---
+    this._drawLegs(ctx, hw, hh, animState, t, character);
+
+    // --- ARMS ---
+    this._drawArms(ctx, hw, hh, animState, t, character);
+
+    // --- BODY ---
+    ctx.fillStyle = this.colors.character;
+    ctx.strokeStyle = this.colors.characterStroke;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(-hw + shakeX, -hh + shakeY, character.width, character.height, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Planet-reactive tint overlay
+    if (planet) {
+      this._drawPlanetTint(ctx, hw, hh, character, planet, shakeX, shakeY);
+    }
+
+    // --- EYES ---
+    this._drawEyes(ctx, animState, character, t, shakeX, shakeY);
+
+    // --- EYEBROWS ---
+    this._drawEyebrows(ctx, animState, shakeX, shakeY);
+
+    // --- MOUTH ---
+    this._drawMouth(ctx, animState, character, t, shakeX, shakeY);
+
+    ctx.restore();
+  }
+
+  /** Draw two stubby legs below the body. */
+  _drawLegs(ctx, _hw, hh, animState, t, character) {
+    const legW = 10;
+    const legH = 8;
+    const legSpacing = 8;
+    const bodyColor = this.colors.character;
+    const strokeColor = this.colors.characterStroke;
+
+    for (let side = -1; side <= 1; side += 2) {
+      ctx.save();
+      const baseX = side * legSpacing;
+      let baseY = hh;
+      let angle = 0;
+
+      switch (animState) {
+        case 'idle':
+          baseY += Math.sin(t * 2 + side * Math.PI) * 1.5;
+          break;
+        case 'charge-low':
+          baseY -= 2;
+          break;
+        case 'charge-mid':
+          baseY -= 4;
+          break;
+        case 'charge-high':
+          baseY -= 6;
+          break;
+        case 'rising':
+          baseY += 4;
+          break;
+        case 'peak':
+          baseY += 2;
+          break;
+        case 'falling':
+          angle = Math.sin(t * 8 + side * Math.PI) * 0.4;
+          baseY += 2;
+          break;
+        case 'sliding':
+          angle = side * 0.3;
+          break;
+        case 'death':
+          angle = side * (0.5 + character.deathTimer * 2);
+          break;
+        case 'victory':
+          baseY += Math.sin(t * 6) * 3;
+          break;
+        default:
+          break;
+      }
+
+      ctx.translate(baseX, baseY);
+      ctx.rotate(angle);
+      ctx.fillStyle = bodyColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-legW / 2, 0, legW, legH, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /** Draw two stubby arms on the sides. */
+  _drawArms(ctx, hw, hh, animState, t, _character) {
+    const armW = 8;
+    const armH = 6;
+    const bodyColor = this.colors.character;
+    const strokeColor = this.colors.characterStroke;
+
+    for (let side = -1; side <= 1; side += 2) {
+      ctx.save();
+      let baseX = side * (hw + 2);
+      let baseY = 0;
+      let angle = 0;
+
+      switch (animState) {
+        case 'idle':
+          baseY = 2;
+          angle = side * (0.1 + Math.sin(t * 1.5) * 0.05);
+          break;
+        case 'charge-low':
+          baseX = side * (hw - 1);
+          angle = side * 0.2;
+          break;
+        case 'charge-mid':
+          baseX = side * (hw - 3);
+          angle = side * 0.3;
+          break;
+        case 'charge-high':
+          baseX = side * (hw - 5);
+          angle = side * 0.4;
+          break;
+        case 'rising':
+          baseY = -5;
+          angle = side * -0.8;
+          break;
+        case 'peak':
+          baseY = -3;
+          angle = side * -1.2;
+          break;
+        case 'falling':
+          baseY = -hh + 2;
+          angle = side * (-1.0 + Math.sin(t * 10 + side) * 0.3);
+          break;
+        case 'sliding':
+          baseY = -2;
+          angle = side * -0.7;
+          break;
+        case 'death':
+          angle = side * Math.sin(t * 15 + side) * 1.5;
+          break;
+        case 'victory':
+          baseY = -hh - 2;
+          angle = side * -0.5;
+          break;
+        default:
+          break;
+      }
+
+      ctx.translate(baseX, baseY);
+      ctx.rotate(angle);
+      ctx.fillStyle = bodyColor;
+      ctx.strokeStyle = strokeColor;
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.roundRect(-armW / 2, -armH / 2, armW, armH, 3);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  /** Draw planet-reactive tint overlay on the body. */
+  _drawPlanetTint(ctx, hw, hh, character, planet, shakeX, shakeY) {
+    ctx.save();
+    const friction = planet.surfaceFriction ?? 1.0;
+    const bodyType = planet.bodyType || '';
+    const body = planet.body || '';
+
+    let tintColor;
+    if (friction < 0.7 || bodyType === 'icy') {
+      tintColor = 'rgba(150,200,255,0.12)';
+    } else if (bodyType === 'volcanic' || body === 'io') {
+      tintColor = 'rgba(255,140,50,0.12)';
+    } else if (bodyType === 'gas_giant') {
+      tintColor = 'rgba(255,215,100,0.10)';
+    } else if (planet.groundColor) {
+      tintColor = planet.groundColor;
+      ctx.globalAlpha = 0.12;
+    } else {
+      ctx.restore();
+      return;
+    }
+
+    ctx.fillStyle = tintColor;
+    ctx.beginPath();
+    ctx.roundRect(-hw + shakeX, -hh + shakeY, character.width, character.height, 8);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  /** Draw expressive eyes based on animation state. */
+  _drawEyes(ctx, animState, character, _t, shakeX, shakeY) {
+    const eyeY = -5 + shakeY;
+    const eyeSpacing = 8;
+    const leftX = -eyeSpacing + shakeX;
+    const rightX = eyeSpacing + shakeX;
+
+    // Death: X eyes
+    if (animState === 'death') {
+      ctx.strokeStyle = this.colors.pupils;
+      ctx.lineWidth = 2;
+      for (const ex of [leftX, rightX]) {
+        ctx.beginPath();
+        ctx.moveTo(ex - 3, eyeY - 3);
+        ctx.lineTo(ex + 3, eyeY + 3);
+        ctx.moveTo(ex + 3, eyeY - 3);
+        ctx.lineTo(ex - 3, eyeY + 3);
+        ctx.stroke();
+      }
+      return;
+    }
+
+    // Victory: star eyes
+    if (animState === 'victory') {
+      ctx.fillStyle = '#FFD700';
+      for (const ex of [leftX, rightX]) {
+        this._drawStar(ctx, ex, eyeY, 5, 5);
+      }
+      return;
+    }
+
+    // Determine sclera size and pupil based on state
+    let scleraRx = 6;
+    let scleraRy = 6;
+    let pupilR = 2.5;
+    let pupilOffX = 0;
+    let pupilOffY = 0;
+    let blinkScale = 1;
+
+    // Blink (idle/sliding)
+    if (character.blinkPhase > 0 && (animState === 'idle' || animState === 'sliding')) {
+      const halfDur = 0.075;
+      const bp = character.blinkPhase;
+      if (bp > halfDur) {
+        blinkScale = (0.15 - bp) / halfDur;
+      } else {
+        blinkScale = bp / halfDur;
+      }
+      blinkScale = Math.max(0.05, blinkScale);
+    }
+
+    switch (animState) {
+      case 'idle':
+        pupilOffX = character.pupilDriftX || 0;
+        pupilOffY = character.pupilDriftY || 0;
+        break;
+      case 'charge-low':
+        scleraRy = 4.5;
+        pupilR = 2;
+        break;
+      case 'charge-mid':
+        scleraRy = 3;
+        pupilR = 1.5;
+        break;
+      case 'charge-high':
+        scleraRy = 2;
+        pupilR = 1;
+        break;
+      case 'rising':
+        pupilOffX = 0;
+        pupilOffY = 0;
+        break;
+      case 'peak':
+        pupilOffY = 2;
+        break;
+      case 'falling':
+        scleraRx = 7;
+        scleraRy = 7;
+        pupilR = 1.8;
+        pupilOffY = -1.5;
+        break;
+      case 'sliding':
+        pupilOffX = character._slideVx > 0 ? 2 : character._slideVx < 0 ? -2 : 0;
+        break;
+      default:
+        break;
+    }
+
+    // Draw sclera (white ellipses)
+    ctx.fillStyle = this.colors.eyes;
+    for (const ex of [leftX, rightX]) {
+      ctx.save();
+      ctx.translate(ex, eyeY);
+      ctx.scale(1, blinkScale);
+      ctx.beginPath();
+      ctx.ellipse(0, 0, scleraRx, scleraRy, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    // Draw pupils (only if not fully blinked)
+    if (blinkScale > 0.2) {
+      ctx.fillStyle = this.colors.pupils;
+      for (const ex of [leftX, rightX]) {
+        ctx.beginPath();
+        ctx.arc(ex + pupilOffX, eyeY + pupilOffY, pupilR, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  /** Draw eyebrows for specific states. */
+  _drawEyebrows(ctx, animState, shakeX, shakeY) {
+    const eyeY = -5 + shakeY;
+    const eyeSpacing = 8;
+    const browLen = 6;
+    const browY = eyeY - 8;
+
+    let type = null;
+    if (animState === 'rising' || animState === 'charge-high') {
+      type = 'determined';
+    } else if (animState === 'falling' || animState === 'sliding') {
+      type = 'worried';
+    }
+
+    if (!type) return;
+
+    ctx.strokeStyle = this.colors.characterStroke;
+    ctx.lineWidth = 2;
+    ctx.lineCap = 'round';
+
+    for (let side = -1; side <= 1; side += 2) {
+      const bx = side * eyeSpacing + shakeX;
+      ctx.beginPath();
+      if (type === 'determined') {
+        ctx.moveTo(bx - side * (browLen / 2), browY + 2);
+        ctx.lineTo(bx + side * (browLen / 2), browY);
+      } else {
+        ctx.moveTo(bx - side * (browLen / 2), browY);
+        ctx.lineTo(bx + side * (browLen / 2), browY + 2);
+      }
+      ctx.stroke();
+    }
+    ctx.lineCap = 'butt';
+  }
+
+  /** Draw mouth based on animation state. */
+  _drawMouth(ctx, animState, character, t, shakeX, shakeY) {
+    const mouthY = 8 + shakeY;
+    const mouthX = 0 + shakeX;
+
+    ctx.strokeStyle = this.colors.characterStroke;
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+
+    switch (animState) {
+      case 'idle':
+        ctx.beginPath();
+        ctx.arc(mouthX, mouthY - 2, 5, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+        break;
+      case 'charge-low':
+      case 'charge-mid':
+        ctx.beginPath();
+        ctx.moveTo(mouthX - 4, mouthY);
+        ctx.lineTo(mouthX + 4, mouthY);
+        ctx.stroke();
+        break;
+      case 'charge-high':
+        ctx.beginPath();
+        ctx.moveTo(mouthX - 5, mouthY);
+        for (let x = -5; x <= 5; x += 2) {
+          ctx.lineTo(mouthX + x, mouthY + (x % 4 === 0 ? -1 : 1));
+        }
+        ctx.stroke();
+        break;
+      case 'rising':
+        ctx.beginPath();
+        ctx.moveTo(mouthX - 4, mouthY);
+        ctx.lineTo(mouthX + 4, mouthY);
+        ctx.stroke();
+        break;
+      case 'peak':
+        ctx.beginPath();
+        ctx.arc(mouthX, mouthY - 1, 4, 0.15 * Math.PI, 0.85 * Math.PI);
+        ctx.stroke();
+        break;
+      case 'falling':
+      case 'death':
+        ctx.beginPath();
+        ctx.arc(mouthX, mouthY, 4, 0, Math.PI * 2);
+        ctx.stroke();
+        break;
+      case 'sliding':
+        ctx.beginPath();
+        ctx.moveTo(mouthX - 5, mouthY);
+        for (let x = -5; x <= 5; x += 2.5) {
+          ctx.lineTo(mouthX + x, mouthY + Math.sin((x + t * 5) * 1.5) * 1.5);
+        }
+        ctx.stroke();
+        break;
+      case 'victory':
+        ctx.beginPath();
+        ctx.arc(mouthX, mouthY - 2, 7, 0.1 * Math.PI, 0.9 * Math.PI);
+        ctx.stroke();
+        break;
+      default:
+        if (character.landingImpact > 0) {
+          ctx.beginPath();
+          ctx.arc(mouthX, mouthY - 2, 6, 0.1 * Math.PI, 0.9 * Math.PI);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.arc(mouthX, mouthY - 2, 5, 0.15 * Math.PI, 0.85 * Math.PI);
+          ctx.stroke();
+        }
+        break;
+    }
+    ctx.lineCap = 'butt';
+  }
+
+  /** Draw a small 5-point star at (x, y). */
+  _drawStar(ctx, x, y, outerR, points) {
+    const innerR = outerR * 0.4;
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+      const r = i % 2 === 0 ? outerR : innerR;
+      const angle = (i * Math.PI) / points - Math.PI / 2;
+      const px = x + Math.cos(angle) * r;
+      const py = y + Math.sin(angle) * r;
+      if (i === 0) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  /** Draw landing dust burst at character feet. */
+  _drawLandingDust(ctx, character, planet) {
+    if (!character.landingImpact || character.landingImpact <= 0) return;
+
+    const footY = character.y + character.height;
+    const charCx = character.x + character.width / 2;
+    const impact = character.landingImpact;
+    const spread = (1 - impact) * 30;
+    const count = 7;
+    const groundColor = (planet && planet.groundColor) || '#8a8a8a';
+
+    ctx.save();
+    for (let i = 0; i < count; i++) {
+      const angle = (i * Math.PI) / count;
+      const px = charCx + Math.cos(angle) * spread * (0.8 + (i % 3) * 0.2);
+      const py = footY - Math.sin(angle) * spread * 0.3;
+      const r = 2.5 * impact;
+
+      ctx.globalAlpha = impact * 0.6;
+      ctx.fillStyle = groundColor;
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  /** Draw orbiting charge energy particles around the character. */
+  _drawChargeParticles(ctx, character, power) {
+    if (power <= 0) return;
+
+    const charCx = character.x + character.width / 2;
+    const charCy = character.y + character.height / 2;
+    const count = 4;
+    const orbitR = 25 - power * 10;
+    const baseAngle = performance.now() * 0.004;
+
+    ctx.save();
+    for (let i = 0; i < count; i++) {
+      const angle = baseAngle + (i * 2 * Math.PI) / count;
+      const px = charCx + Math.cos(angle) * orbitR;
+      const py = charCy + Math.sin(angle) * orbitR;
+      const r = 2 + power;
+
+      ctx.globalAlpha = 0.5 + power * 0.5;
+      ctx.fillStyle = '#5fd4d4';
+
+      // Glow at high power
+      if (power > 0.66) {
+        ctx.globalAlpha = 0.15;
+        ctx.beginPath();
+        ctx.arc(px, py, r * 2.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 0.5 + power * 0.5;
+      }
+
+      ctx.beginPath();
+      ctx.arc(px, py, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.restore();
   }
 
   /** Draw friction particles at character's feet during slide. */
