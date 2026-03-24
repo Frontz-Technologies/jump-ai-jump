@@ -163,6 +163,15 @@ export class Game {
         if (e.key === 'Enter') this._submitNamePrompt();
       });
     }
+
+    // Mode card toggle (name prompt)
+    const modeCards = document.querySelectorAll('#name-prompt .mode-card');
+    modeCards.forEach((card) => {
+      card.addEventListener('click', () => {
+        modeCards.forEach((c) => c.classList.remove('active'));
+        card.classList.add('active');
+      });
+    });
   }
 
   /** Show name prompt if first time, otherwise start game directly. */
@@ -180,6 +189,14 @@ export class Game {
     if (!this._namePromptInput) return;
     const val = this._namePromptInput.value.trim();
     this.storage.setPlayerName(val || 'Anonymous');
+
+    // Read selected mode from card selector
+    const activeCard = document.querySelector('#name-prompt .mode-card.active');
+    if (activeCard) {
+      const mode = activeCard.getAttribute('data-mode');
+      this.storage.setSetting('humanTourist', mode === 'tourist');
+    }
+
     if (this._namePrompt) this._namePrompt.classList.add('hidden');
     this._startGame();
   }
@@ -681,6 +698,7 @@ export class Game {
     }
 
     char.updateAnimation(dt);
+    char.updateVisualState(dt);
 
     // Animate platform spawn offsets toward 0
     for (const entry of this._visiblePlatforms) {
@@ -1030,6 +1048,8 @@ export class Game {
     this.stopAutoPlay();
     this._hidePlanetInfo();
     this.audio.playFall();
+    this.character.deathActive = true;
+    this.character.deathTimer = 0;
 
     // Character thoughts: death
     this.thoughts.onDeath(this.currentPlatformIndex, this.stageIndex, planet.name);
@@ -1078,6 +1098,8 @@ export class Game {
     this.stopAutoPlay();
     this._hidePlanetInfo();
     this.audio.playComplete();
+    this.character.victoryActive = true;
+    this.character.victoryTimer = 0;
     this.ui.showVictory(this.currentPlatformIndex + 1, this.stageIndex + 1);
 
     // Character thoughts: victory

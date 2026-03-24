@@ -140,19 +140,36 @@
         <div class="modal-backdrop"></div>
         <div class="modal-content">
           <div class="modal-header">
-            <h3>What's your name?</h3>
+            <h3>Mission Registration</h3>
           </div>
           <div class="modal-body">
-            <p class="name-prompt-desc">This will appear on leaderboards.</p>
+            <label class="setting-label" for="name-prompt-input">Callsign</label>
             <input
               type="text"
               id="name-prompt-input"
               class="setting-input"
               maxlength="20"
-              placeholder="Enter your name"
+              placeholder="Enter your callsign"
               autofocus
             />
-            <button id="name-prompt-ok" class="primary-btn name-prompt-btn">Continue</button>
+
+            <label class="setting-label mode-label">Select Mode</label>
+            <div class="mode-selector">
+              <button
+                type="button"
+                class="mode-card mode-card--explorer active"
+                data-mode="explorer"
+              >
+                <span class="mode-card-title">EXPLORER</span>
+                <span class="mode-card-desc">Full challenge</span>
+              </button>
+              <button type="button" class="mode-card mode-card--tourist" data-mode="tourist">
+                <span class="mode-card-title">TOURIST</span>
+                <span class="mode-card-desc">Easier + checkpoints</span>
+              </button>
+            </div>
+
+            <button id="name-prompt-ok" class="primary-btn name-prompt-btn">LAUNCH</button>
           </div>
         </div>
       </div>
@@ -170,17 +187,23 @@
       <!-- Menu screen -->
       <div id="menu-screen" class="overlay">
         <div class="overlay-content">
-          <h1>Jump AI Jump</h1>
-          <p class="subtitle">Hold to charge. Release to jump.<br />A new journey every day.</p>
+          <h1>
+            <span class="title-white">JUMP </span><span class="title-ai">AI</span
+            ><span class="title-white"> JUMP</span>
+          </h1>
+          <p class="subtitle">The galaxy is built by AI. Can you cross it?</p>
           <div id="daily-challenge" class="daily-challenge hidden">
             <span class="daily-label">Today's Galaxy</span>
             <span id="daily-galaxy-name" class="daily-name"></span>
             <span id="daily-galaxy-meta" class="daily-meta"></span>
           </div>
-          <p class="menu-taunt" id="menu-taunt">
-            Past level 2, your reflexes won't be enough.<br />Will you bring the right tools?
-          </p>
-          <button id="btn-start" class="primary-btn">Play</button>
+          <button id="btn-start" class="primary-btn">LAUNCH</button>
+          <div class="ai-taunt-card" id="menu-taunt">
+            <p class="ai-taunt-text">
+              Past level 2, reflexes won't be enough. Connect your AI agent to go further.
+            </p>
+            <button id="btn-taunt-connect" class="ai-taunt-btn">Connect AI</button>
+          </div>
           <div class="menu-footer">
             <button id="menu-leaderboard" class="text-btn">Leaderboard</button>
             <button id="menu-settings" class="text-btn">Settings</button>

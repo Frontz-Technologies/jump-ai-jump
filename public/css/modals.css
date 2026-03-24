@@ -149,16 +149,65 @@
 
 /* ─── Name prompt ─── */
 
-.name-prompt-desc {
-  font-size: 13px;
-  color: var(--text-muted, var(--muted));
-  margin-bottom: 16px;
-}
-
 .name-prompt-btn {
   display: block;
   width: 100%;
   margin-top: 16px;
+}
+
+/* ─── Mode card selector ─── */
+
+.mode-label {
+  margin-top: 16px;
+}
+
+.mode-selector {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.mode-card {
+  flex: 1;
+  padding: 14px 8px;
+  border-radius: 10px;
+  border: 2px solid var(--line);
+  background: var(--bg);
+  cursor: pointer;
+  text-align: center;
+  transition:
+    border-color 0.15s,
+    background 0.15s;
+}
+
+.mode-card:hover {
+  border-color: var(--text-muted);
+}
+
+.mode-card.active.mode-card--explorer {
+  border-color: var(--primary);
+  background: rgba(56, 232, 216, 0.06);
+}
+
+.mode-card.active.mode-card--tourist {
+  border-color: var(--accent-gold);
+  background: rgba(240, 192, 80, 0.06);
+}
+
+.mode-card-title {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.mode-card-desc {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* ─── Toggle rows (Settings) ─── */

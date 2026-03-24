@@ -42,6 +42,10 @@ export class UIManager {
     if (aiBtn) {
       aiBtn.addEventListener('click', () => this._openMCPModal());
     }
+    const tauntConnectBtn = document.getElementById('btn-taunt-connect');
+    if (tauntConnectBtn) {
+      tauntConnectBtn.addEventListener('click', () => this._openMCPModal());
+    }
     this._wireMCPModal();
 
     // Auto-connect MCP bridge when ?mcpSession=xxx is in the URL

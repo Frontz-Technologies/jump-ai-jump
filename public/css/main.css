@@ -399,10 +399,8 @@ body {
 /* ─── Menu title glow ─── */
 
 #menu-screen .overlay-content h1 {
-  text-shadow:
-    0 0 20px rgba(56, 232, 216, 0.3),
-    0 0 40px rgba(56, 232, 216, 0.1);
-  animation: titleGlow 3s ease-in-out infinite alternate;
+  text-shadow: none;
+  animation: none;
 }
 
 @keyframes titleGlow {
@@ -518,11 +516,24 @@ body {
 
 .overlay-content h1 {
   font-family: var(--font-display);
-  font-size: 40px;
+  font-size: 48px;
   font-weight: 700;
   letter-spacing: -0.5px;
   margin-bottom: 0;
   line-height: 1.1;
+  text-transform: uppercase;
+}
+
+.title-white {
+  color: #ffffff;
+}
+
+.title-ai {
+  color: var(--primary);
+  text-shadow:
+    0 0 20px rgba(56, 232, 216, 0.6),
+    0 0 40px rgba(56, 232, 216, 0.3);
+  animation: titleGlow 3s ease-in-out infinite alternate;
 }
 
 /* Thin accent line under the title */
@@ -598,15 +609,44 @@ body {
   letter-spacing: 0.3px;
 }
 
-/* ─── Menu taunt ─── */
+/* ─── AI taunt card ─── */
 
-.menu-taunt {
+.ai-taunt-card {
+  margin-top: 20px;
+  margin-bottom: 8px;
+  padding: 14px 20px;
+  border: 1px solid var(--accent);
+  border-radius: 10px;
+  background: rgba(196, 144, 255, 0.06);
+  text-align: center;
+}
+
+.ai-taunt-text {
   font-size: 12px;
-  font-style: italic;
-  color: var(--text-muted, var(--muted));
+  color: var(--text-muted);
   line-height: 1.6;
-  margin-bottom: 24px;
-  opacity: 0.7;
+  margin-bottom: 10px;
+}
+
+.ai-taunt-btn {
+  background: none;
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  border-radius: 100px;
+  padding: 6px 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.ai-taunt-btn:hover {
+  background: var(--accent);
+  color: #0a0a1a;
 }
 
 /* ─── Planet info overlay ─── */
@@ -752,6 +792,7 @@ body {
   #menu-screen::before,
   #menu-screen::after,
   #menu-screen .overlay-content h1,
+  .title-ai,
   #btn-start,
   #menu-screen .daily-label {
     animation: none;
@@ -763,10 +804,10 @@ body {
     transform: none;
   }
 
-  #menu-screen .overlay-content h1 {
+  .title-ai {
     text-shadow:
-      0 0 20px rgba(56, 232, 216, 0.3),
-      0 0 40px rgba(56, 232, 216, 0.1);
+      0 0 20px rgba(56, 232, 216, 0.6),
+      0 0 40px rgba(56, 232, 216, 0.3);
   }
 }
 
@@ -820,7 +861,7 @@ body {
   }
 
   .overlay-content h1 {
-    font-size: 32px;
+    font-size: 36px;
   }
 
   .overlay-content h2 {
