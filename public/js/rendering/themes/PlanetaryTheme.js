@@ -757,7 +757,6 @@ export class PlanetaryTheme extends ThemeBase {
   // --- Character (expressive creature with limbs, eyes, particles) ---
 
   drawCharacter(ctx, character, sliding, extra = {}) {
-    const power = extra.power || 0;
     const planet = extra.planet || null;
 
     // Afterimages (drawn behind character)
@@ -773,9 +772,6 @@ export class PlanetaryTheme extends ThemeBase {
 
     // Landing dust burst
     this._drawLandingDust(ctx, character, planet);
-
-    // Charge energy orbiting particles
-    this._drawChargeParticles(ctx, character, power);
   }
 
   /** Determine the current animation state string from character properties. */
@@ -1301,42 +1297,6 @@ export class PlanetaryTheme extends ThemeBase {
 
       ctx.globalAlpha = impact * 0.6;
       ctx.fillStyle = groundColor;
-      ctx.beginPath();
-      ctx.arc(px, py, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-    ctx.restore();
-  }
-
-  /** Draw orbiting charge energy particles around the character. */
-  _drawChargeParticles(ctx, character, power) {
-    if (power <= 0) return;
-
-    const charCx = character.x + character.width / 2;
-    const charCy = character.y + character.height / 2;
-    const count = 4;
-    const orbitR = 25 - power * 10;
-    const baseAngle = performance.now() * 0.004;
-
-    ctx.save();
-    for (let i = 0; i < count; i++) {
-      const angle = baseAngle + (i * 2 * Math.PI) / count;
-      const px = charCx + Math.cos(angle) * orbitR;
-      const py = charCy + Math.sin(angle) * orbitR;
-      const r = 2 + power;
-
-      ctx.globalAlpha = 0.5 + power * 0.5;
-      ctx.fillStyle = '#5fd4d4';
-
-      // Glow at high power
-      if (power > 0.66) {
-        ctx.globalAlpha = 0.15;
-        ctx.beginPath();
-        ctx.arc(px, py, r * 2.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalAlpha = 0.5 + power * 0.5;
-      }
-
       ctx.beginPath();
       ctx.arc(px, py, r, 0, Math.PI * 2);
       ctx.fill();

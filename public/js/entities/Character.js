@@ -45,7 +45,7 @@ export class Character {
 
   /** Snap character to stand on a platform. */
   landOn(platform, surfaceFriction = 1.0) {
-    this.y = platform.y - this.height;
+    this.y = platform.y - this.height - 8;
     this.vy = 0;
     this._slidePlatform = platform;
     this.landingImpact = 1.0;
