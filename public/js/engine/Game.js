@@ -668,6 +668,11 @@ export class Game {
       this._update(dt);
     }
 
+    // Update visual state (blink, death/victory animations) even when not PLAYING
+    if (this.character) {
+      this.character.updateVisualState(dt);
+    }
+
     this._dt = dt;
     this._draw();
     this._raf = requestAnimationFrame(this._loop.bind(this));
@@ -698,7 +703,6 @@ export class Game {
     }
 
     char.updateAnimation(dt);
-    char.updateVisualState(dt);
 
     // Animate platform spawn offsets toward 0
     for (const entry of this._visiblePlatforms) {
