@@ -3,7 +3,6 @@ const express = require('express');
 const http = require('http');
 const { WebSocketServer } = require('ws');
 const crypto = require('crypto');
-const fs = require('fs');
 const path = require('path');
 
 const {
@@ -11,6 +10,7 @@ const {
   buildContinuationPrompt,
   createGalaxyShell,
 } = require('./galaxy-schema.js');
+const storage = require('./storage');
 
 const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
 const {
@@ -25,10 +25,6 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 const GALAXY_ROTATION_HOURS = parseFloat(process.env.GALAXY_ROTATION_HOURS) || 24;
-const GALAXIES_DIR = path.join(__dirname, 'data', 'galaxies');
-const LEADERBOARDS_DIR = path.join(__dirname, 'data', 'leaderboards');
-fs.mkdirSync(GALAXIES_DIR, { recursive: true });
-fs.mkdirSync(LEADERBOARDS_DIR, { recursive: true });
 
 // Security headers (CSP disabled — game uses inline canvas rendering)
 app.use(helmet({ contentSecurityPolicy: false }));
@@ -40,21 +36,14 @@ app.use((req, res, next) => {
 });
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- Log file setup ---
-const LOG_DIR = path.join(__dirname, 'logs');
-const LOG_FILE = path.join(LOG_DIR, 'llm.jsonl');
-fs.mkdirSync(LOG_DIR, { recursive: true });
-
-// In-memory recent requests (capped at 50)
+// In-memory recent requests (capped at 50) — kept in server.js for fast reads
 const recentRequests = [];
 const MAX_RECENT = 50;
 
 function appendLog(entry) {
   recentRequests.push(entry);
   if (recentRequests.length > MAX_RECENT) recentRequests.shift();
-  try {
-    fs.appendFileSync(LOG_FILE, JSON.stringify(entry) + '\n');
-  } catch {}
+  storage.appendLog(entry);
 }
 
 // --- Client-reported game state ---
@@ -529,9 +518,7 @@ app.post('/api/state', (req, res) => {
 const logsClearLimiter = rateLimit({ windowMs: 60 * 1000, max: 5 });
 app.post('/api/logs/clear', logsClearLimiter, (_req, res) => {
   recentRequests.length = 0;
-  try {
-    fs.writeFileSync(LOG_FILE, '');
-  } catch {}
+  storage.clearLogs();
   res.json({ ok: true });
 });
 
@@ -540,77 +527,7 @@ app.post('/api/logs/clear', logsClearLimiter, (_req, res) => {
 let currentGalaxy = null;
 let galaxyGenerating = false;
 
-function loadCurrentGalaxy() {
-  try {
-    const pointerPath = path.join(GALAXIES_DIR, 'current.json');
-    if (!fs.existsSync(pointerPath)) return null;
-    const pointer = JSON.parse(fs.readFileSync(pointerPath, 'utf-8'));
-    const galaxyPath = path.join(GALAXIES_DIR, `${pointer.galaxyId}.json`);
-    if (!fs.existsSync(galaxyPath)) return null;
-    const galaxy = JSON.parse(fs.readFileSync(galaxyPath, 'utf-8'));
-    // Check expiry
-    if (new Date(galaxy.expiresAt) <= new Date()) return null;
-    return galaxy;
-  } catch (e) {
-    console.error('[Galaxy] Failed to load current galaxy:', e.message);
-    return null;
-  }
-}
-
-function saveGalaxy(galaxy) {
-  const galaxyPath = path.join(GALAXIES_DIR, `${galaxy.galaxyId}.json`);
-  fs.writeFileSync(galaxyPath, JSON.stringify(galaxy, null, 2));
-  const pointerPath = path.join(GALAXIES_DIR, 'current.json');
-  fs.writeFileSync(pointerPath, JSON.stringify({ galaxyId: galaxy.galaxyId, path: galaxyPath }));
-  currentGalaxy = galaxy;
-  console.log(
-    `[Galaxy] Saved galaxy "${galaxy.name}" (${galaxy.planets.length} planets), expires ${galaxy.expiresAt}`,
-  );
-}
-
-function listGalaxyHistory() {
-  try {
-    const files = fs
-      .readdirSync(GALAXIES_DIR)
-      .filter((f) => f !== 'current.json' && f.endsWith('.json'));
-    return files
-      .map((f) => {
-        try {
-          const g = JSON.parse(fs.readFileSync(path.join(GALAXIES_DIR, f), 'utf-8'));
-          return {
-            galaxyId: g.galaxyId,
-            name: g.name,
-            createdAt: g.createdAt,
-            planetCount: g.planets?.length || 0,
-          };
-        } catch {
-          return null;
-        }
-      })
-      .filter(Boolean)
-      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  } catch {
-    return [];
-  }
-}
-
-function collectUsedPlanetNames() {
-  try {
-    const files = fs
-      .readdirSync(GALAXIES_DIR)
-      .filter((f) => f !== 'current.json' && f.endsWith('.json'));
-    const names = new Set();
-    for (const f of files) {
-      try {
-        const g = JSON.parse(fs.readFileSync(path.join(GALAXIES_DIR, f), 'utf-8'));
-        if (g.planets) g.planets.forEach((p) => names.add(p.name));
-      } catch {}
-    }
-    return [...names];
-  } catch {
-    return [];
-  }
-}
+// Galaxy storage functions are now in storage.js
 
 async function generateGalaxy() {
   if (galaxyGenerating) {
@@ -634,7 +551,7 @@ async function generateGalaxy() {
   console.log(`[Galaxy] Generating new galaxy via ${model}...`);
   const galaxy = createGalaxyShell(GALAXY_ROTATION_HOURS);
   const TIMEOUT_MS = 120000; // 2 minute timeout per request
-  const usedNames = collectUsedPlanetNames();
+  const usedNames = await storage.collectUsedPlanetNames();
   console.log(`[Galaxy] ${usedNames.length} planet names already used in previous galaxies`);
 
   try {
@@ -758,7 +675,8 @@ async function generateGalaxy() {
       return null;
     }
 
-    saveGalaxy(galaxy);
+    await storage.saveGalaxy(galaxy);
+    currentGalaxy = galaxy;
     console.log(
       `[Galaxy] Ready! "${galaxy.name}" with ${galaxy.planets.length} planets (id: ${galaxy.galaxyId})`,
     );
@@ -789,8 +707,8 @@ app.post('/api/galaxy/generate', galaxyLimiter, async (_req, res) => {
   }
 });
 
-app.get('/api/galaxy/current', (_req, res) => {
-  const galaxy = currentGalaxy || loadCurrentGalaxy();
+app.get('/api/galaxy/current', async (_req, res) => {
+  const galaxy = currentGalaxy || (await storage.loadCurrentGalaxy());
   if (galaxy) {
     currentGalaxy = galaxy;
     res.json(galaxy);
@@ -799,12 +717,12 @@ app.get('/api/galaxy/current', (_req, res) => {
   }
 });
 
-app.get('/api/galaxy/history', (_req, res) => {
-  res.json(listGalaxyHistory());
+app.get('/api/galaxy/history', async (_req, res) => {
+  res.json(await storage.listGalaxyHistory());
 });
 
 // Leaderboard endpoints
-app.post('/api/leaderboard/submit', (req, res) => {
+app.post('/api/leaderboard/submit', async (req, res) => {
   const { galaxyId, playerId, playerName, highestStage, totalJumps, timeMs, humanTourist } =
     req.body;
   if (!galaxyId || !playerId)
@@ -814,13 +732,6 @@ app.post('/api/leaderboard/submit', (req, res) => {
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(playerId))
     return res.status(400).json({ error: 'Invalid playerId' });
 
-  const lbPath = path.join(LEADERBOARDS_DIR, `${galaxyId}.json`);
-  let entries = [];
-  try {
-    if (fs.existsSync(lbPath)) entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8'));
-  } catch {}
-
-  const existing = entries.findIndex((e) => e.playerId === playerId);
   const entry = {
     playerId,
     playerName: String(playerName || 'Anonymous').slice(0, 30),
@@ -831,113 +742,39 @@ app.post('/api/leaderboard/submit', (req, res) => {
     submittedAt: new Date().toISOString(),
   };
 
-  if (existing >= 0) {
-    // Always update name and timestamp
-    entries[existing].playerName = entry.playerName;
-    entries[existing].submittedAt = entry.submittedAt;
-    // Update score only if it's a new best
-    if (entry.highestStage > entries[existing].highestStage) {
-      entries[existing].highestStage = entry.highestStage;
-      entries[existing].totalJumps = entry.totalJumps;
-      entries[existing].timeMs = entry.timeMs;
-      entries[existing].humanTourist = entry.humanTourist;
-    }
-  } else {
-    entries.push(entry);
-  }
-
-  entries.sort((a, b) => b.highestStage - a.highestStage || a.timeMs - b.timeMs);
-  entries = entries.slice(0, 100);
-
-  try {
-    fs.writeFileSync(lbPath, JSON.stringify(entries, null, 2));
-  } catch {}
-
-  res.json({ ok: true, rank: entries.findIndex((e) => e.playerId === playerId) + 1 });
+  const result = await storage.saveLeaderboardEntry(galaxyId, entry);
+  res.json({ ok: true, rank: result.rank });
 });
 
-function aggregateLeaderboard(filterFn) {
-  const files = fs.readdirSync(LEADERBOARDS_DIR).filter((f) => f.endsWith('.json'));
-  const galaxies = listGalaxyHistory();
-  const galaxyMap = {};
-  for (const g of galaxies) galaxyMap[g.galaxyId] = g;
-
-  const playerBest = {};
-  for (const file of files) {
-    const galaxyId = file.replace('.json', '');
-    const galaxy = galaxyMap[galaxyId] || { name: 'Unknown', createdAt: null };
-    try {
-      const entries = JSON.parse(fs.readFileSync(path.join(LEADERBOARDS_DIR, file), 'utf-8'));
-      for (const e of entries) {
-        if (filterFn && !filterFn(e)) continue;
-        const key = e.playerId || e.playerName;
-        if (!playerBest[key] || e.highestStage > playerBest[key].highestStage) {
-          playerBest[key] = {
-            playerName: e.playerName,
-            highestStage: e.highestStage,
-            galaxyName: galaxy.name,
-            galaxyId,
-            date: e.submittedAt || galaxy.createdAt,
-          };
-        }
-      }
-    } catch {}
-  }
-
-  return Object.values(playerBest)
-    .sort((a, b) => b.highestStage - a.highestStage)
-    .slice(0, 50);
-}
-
 // All-time leaderboard: best run per player across all galaxies
-app.get('/api/leaderboard/all-time', (_req, res) => {
+app.get('/api/leaderboard/all-time', async (_req, res) => {
   try {
-    res.json(aggregateLeaderboard());
+    res.json(await storage.aggregateLeaderboard());
   } catch {
     res.json([]);
   }
 });
 
 // Tourist runs: all-time but filtered to humanTourist entries only
-app.get('/api/leaderboard/tourist', (_req, res) => {
+app.get('/api/leaderboard/tourist', async (_req, res) => {
   try {
-    res.json(aggregateLeaderboard((e) => e.humanTourist));
+    res.json(await storage.aggregateLeaderboard({ humanTouristOnly: true }));
   } catch {
     res.json([]);
   }
 });
 
 // Note: /history must be before /:galaxyId to avoid param capture
-app.get('/api/leaderboard/history', (_req, res) => {
-  const galaxies = listGalaxyHistory();
-  const result = galaxies.map((g) => {
-    const lbPath = path.join(LEADERBOARDS_DIR, `${g.galaxyId}.json`);
-    let entries = [];
-    try {
-      if (fs.existsSync(lbPath)) {
-        entries = JSON.parse(fs.readFileSync(lbPath, 'utf-8')).slice(0, 10);
-      }
-    } catch {}
-    return { ...g, entries };
-  });
-  res.json(result);
+app.get('/api/leaderboard/history', async (_req, res) => {
+  res.json(await storage.loadLeaderboardHistory());
 });
 
-app.get('/api/leaderboard/:galaxyId', (req, res) => {
+app.get('/api/leaderboard/:galaxyId', async (req, res) => {
   let galaxyId = req.params.galaxyId;
   if (galaxyId === 'current' && currentGalaxy) galaxyId = currentGalaxy.galaxyId;
   if (!/^[a-zA-Z0-9_-]{1,64}$/.test(galaxyId))
     return res.status(400).json({ error: 'Invalid galaxyId' });
-  const lbPath = path.join(LEADERBOARDS_DIR, `${galaxyId}.json`);
-  try {
-    if (fs.existsSync(lbPath)) {
-      res.json(JSON.parse(fs.readFileSync(lbPath, 'utf-8')));
-    } else {
-      res.json([]);
-    }
-  } catch {
-    res.json([]);
-  }
+  res.json(await storage.loadLeaderboard(galaxyId));
 });
 
 // --- MCP session manager ---
@@ -1226,7 +1063,7 @@ setInterval(() => {
 async function checkGalaxyRotation() {
   if (galaxyGenerating) return; // already in progress, skip silently
   if (!currentGalaxy) {
-    currentGalaxy = loadCurrentGalaxy();
+    currentGalaxy = await storage.loadCurrentGalaxy();
   }
   if (!currentGalaxy) {
     console.log('[Galaxy] No current galaxy found, generating...');
@@ -1242,13 +1079,18 @@ setInterval(checkGalaxyRotation, 60000);
 
 // --- Start server ---
 if (require.main === module) {
-  server.listen(PORT, () => {
-    console.log(`Jump AI Jump server running at http://localhost:${PORT}`);
-    // Check galaxy on startup
-    checkGalaxyRotation().catch((err) =>
-      console.error('[Galaxy] Startup check failed:', err.message),
-    );
+  storage.initStorage().then(() => {
+    server.listen(PORT, () => {
+      console.log(`Jump AI Jump server running at http://localhost:${PORT}`);
+      // Check galaxy on startup
+      checkGalaxyRotation().catch((err) =>
+        console.error('[Galaxy] Startup check failed:', err.message),
+      );
+    });
   });
+} else {
+  // When imported (e.g. tests), initialise storage synchronously in fs mode
+  storage.initStorage().catch(() => {});
 }
 
 module.exports = app;

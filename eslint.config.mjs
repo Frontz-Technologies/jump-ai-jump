@@ -14,7 +14,7 @@ export default [
     },
   },
   {
-    files: ['server.js', 'galaxy-schema.js'],
+    files: ['server.js', 'galaxy-schema.js', 'storage.js'],
     languageOptions: {
       ecmaVersion: 2022,
       sourceType: 'commonjs',
