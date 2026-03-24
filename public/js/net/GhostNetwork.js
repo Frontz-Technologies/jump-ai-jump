@@ -251,6 +251,10 @@ export class GhostNetwork {
         continue;
       }
 
+      // Skip ghosts beyond the visible platform window (don't delete — they may scroll into view)
+      const ghostMaxIndex = g.airborne ? Math.max(g.fromIndex, g.toIndex) : g.platformIndex;
+      if (ghostMaxIndex > currentPlatformIndex + 2) continue;
+
       if (g.airborne) {
         const from = platforms[g.fromIndex];
         const to = platforms[g.toIndex];
