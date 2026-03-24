@@ -193,7 +193,7 @@ export class Game {
           return;
         this.character.cancelSlide();
         this.character.startCharge();
-        this.audio.playCharge();
+        this.audio.startCharge();
       },
       onJumpRelease: (power) => {
         if (this.state !== GameState.PLAYING) return;
@@ -931,6 +931,10 @@ export class Game {
     }
 
     const power = this.character.state === CharState.CHARGING ? this.input.getCurrentPower() : 0;
+
+    if (this.character.state === CharState.CHARGING) {
+      this.audio.updateCharge(power);
+    }
 
     // Compute AI eye indicator state
     const char = this.character;
