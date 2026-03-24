@@ -1050,6 +1050,8 @@ export class Game {
     this.audio.playFall();
     this.character.deathActive = true;
     this.character.deathTimer = 0;
+    this.character.scaleX = 1;
+    this.character.scaleY = 1;
 
     // Character thoughts: death
     this.thoughts.onDeath(this.currentPlatformIndex, this.stageIndex, planet.name);
