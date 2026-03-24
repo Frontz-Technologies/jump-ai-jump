@@ -82,6 +82,7 @@ export class DifficultyManager {
       clampedG === planet.gReal &&
       clampedAir === planet.airDensity &&
       clampedWindMax === (planet.windMax ?? 0) &&
+      clampedWindMin === (planet.windMin ?? 0) &&
       clampedFriction === (planet.surfaceFriction ?? 1.0)
     ) {
       return planet;
@@ -118,7 +119,11 @@ export class DifficultyManager {
     const clampedWindMax = Math.min(planet.windMax ?? 0, 80);
     const clampedWindMin = Math.min(planet.windMin ?? 0, clampedWindMax);
 
-    if (clampedAir === planet.airDensity && clampedWindMax === (planet.windMax ?? 0)) {
+    if (
+      clampedAir === planet.airDensity &&
+      clampedWindMax === (planet.windMax ?? 0) &&
+      clampedWindMin === (planet.windMin ?? 0)
+    ) {
       return planet;
     }
 
