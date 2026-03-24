@@ -505,6 +505,13 @@ Details: ${JSON.stringify(eventContext)}`;
   }
 });
 
+// --- Public config endpoint ---
+app.get('/api/config', (_req, res) => {
+  res.json({
+    debugEnabled: process.env.ENABLE_DEBUG === 'true',
+  });
+});
+
 // --- Debug/diagnostic endpoints (unauthenticated by design — single-player, self-hosted game) ---
 app.get('/api/logs', (_req, res) => {
   res.json(recentRequests);

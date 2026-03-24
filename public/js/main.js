@@ -9,11 +9,12 @@ const game = new Game(canvas, analytics);
 window.__game = game;
 window.__analytics = analytics;
 
-// Debug panel: activate via ?debug=1 or backtick key
-const debugEnabled = new URLSearchParams(window.location.search).has('debug');
+// Debug panel: gated by server-side ENABLE_DEBUG env var
+let debugAllowed = false;
 let debugPanel = null;
 
 async function toggleDebugPanel() {
+  if (!debugAllowed) return;
   if (debugPanel) {
     debugPanel.toggle();
     return;
@@ -24,12 +25,18 @@ async function toggleDebugPanel() {
   analytics.startPeriodicPush();
 }
 
-if (debugEnabled) {
-  toggleDebugPanel();
-}
+fetch('/api/config')
+  .then((r) => r.json())
+  .then((config) => {
+    debugAllowed = config.debugEnabled;
+    if (debugAllowed && new URLSearchParams(window.location.search).has('debug')) {
+      toggleDebugPanel();
+    }
+  })
+  .catch(() => {});
 
 window.addEventListener('keydown', (e) => {
-  if (e.key === '`' || e.key === 'Backquote') {
+  if ((e.key === '`' || e.key === 'Backquote') && debugAllowed) {
     e.preventDefault();
     toggleDebugPanel();
   }
