@@ -19,6 +19,7 @@
   --success: #4ecdc4;
   --muted: #8a8aa8;
   --accent: #a78bfa;
+  --font-display: 'Orbitron', sans-serif;
 }
 
 [data-theme='dark'] {
@@ -40,6 +41,7 @@
   --meter-full: #ef4444;
   --muted: #5a5c7a;
   --accent: #a78bfa;
+  --font-display: 'Orbitron', sans-serif;
 }
 
 .hidden {
@@ -126,6 +128,7 @@ body {
 }
 
 #stage-label {
+  font-family: var(--font-display);
   font-size: 11px;
   font-weight: 500;
   color: rgba(255, 255, 255, 0.5);
@@ -181,6 +184,7 @@ body {
 }
 
 #jump-count {
+  font-family: var(--font-display);
   font-size: 44px;
   font-weight: 700;
   line-height: 1;
@@ -356,6 +360,7 @@ body {
 }
 
 .overlay-content h1 {
+  font-family: var(--font-display);
   font-size: 40px;
   font-weight: 700;
   letter-spacing: -0.5px;
@@ -375,6 +380,7 @@ body {
 }
 
 .overlay-content h2 {
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 600;
   letter-spacing: -0.3px;
@@ -415,6 +421,7 @@ body {
 
 .daily-name {
   display: block;
+  font-family: var(--font-display);
   font-size: 18px;
   font-weight: 600;
   letter-spacing: -0.3px;

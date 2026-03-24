@@ -41,6 +41,7 @@
 }
 
 .modal-header h3 {
+  font-family: var(--font-display);
   font-size: 14px;
   font-weight: 600;
   letter-spacing: 0.5px;
@@ -231,6 +232,7 @@
 
 .stat-value {
   display: block;
+  font-family: var(--font-display);
   font-size: 28px;
   font-weight: 600;
   color: var(--primary);
@@ -525,13 +527,13 @@
 }
 
 .mcp-session-id {
+  font-family: var(--font-display);
   font-size: 24px;
   font-weight: 700;
   letter-spacing: 2px;
   text-align: center;
   color: var(--primary);
   padding: 12px 0;
-  font-family: monospace;
 }
 
 .mcp-instructions {
