@@ -73,7 +73,21 @@ export class DifficultyManager {
   getTouristPlanet(planet) {
     if (!this._humanTourist) return planet;
     const clampedG = Math.max(0.8, Math.min(15, planet.gReal));
-    if (clampedG === planet.gReal) return planet;
+    const clampedAir = Math.min(planet.airDensity, 5.0);
+    const clampedWindMax = Math.min(planet.windMax ?? 0, 30);
+    const clampedWindMin = Math.min(planet.windMin ?? 0, clampedWindMax);
+    const clampedFriction = Math.max(planet.surfaceFriction ?? 1.0, 0.6);
+
+    if (
+      clampedG === planet.gReal &&
+      clampedAir === planet.airDensity &&
+      clampedWindMax === (planet.windMax ?? 0) &&
+      clampedWindMin === (planet.windMin ?? 0) &&
+      clampedFriction === (planet.surfaceFriction ?? 1.0)
+    ) {
+      return planet;
+    }
+
     const gravity = Math.round(clampedG * SCALE);
     const vs = Math.sqrt(gravity / EARTH_GRAVITY_PX);
     return {
@@ -85,8 +99,39 @@ export class DifficultyManager {
       minVY: BASE_MIN_VY * vs,
       maxVY: BASE_MAX_VY * vs,
       terminalVY: BASE_TERMINAL_VY * vs,
+      airDensity: clampedAir,
+      windMin: clampedWindMin,
+      windMax: clampedWindMax,
+      surfaceFriction: clampedFriction,
       gReal: planet.gReal,
       _touristGravityClamped: true,
+    };
+  }
+
+  /**
+   * Clamp extreme atmospheric parameters for solvability in normal mode.
+   * Only air density and wind are clamped — gravity and friction stay unchanged.
+   * Returns the planet unchanged if already within range.
+   */
+  getSafePlanet(planet) {
+    if (this._humanTourist) return planet; // tourist mode uses getTouristPlanet instead
+    const clampedAir = Math.min(planet.airDensity, 20.0);
+    const clampedWindMax = Math.min(planet.windMax ?? 0, 80);
+    const clampedWindMin = Math.min(planet.windMin ?? 0, clampedWindMax);
+
+    if (
+      clampedAir === planet.airDensity &&
+      clampedWindMax === (planet.windMax ?? 0) &&
+      clampedWindMin === (planet.windMin ?? 0)
+    ) {
+      return planet;
+    }
+
+    return {
+      ...planet,
+      airDensity: clampedAir,
+      windMin: clampedWindMin,
+      windMax: clampedWindMax,
     };
   }
 
