@@ -10,6 +10,7 @@ const DEFAULT_DATA = {
     totalGames: 0,
     totalJumps: 0,
     bestPlatform: 0,
+    bestPlatformTourist: 0,
     levelsCompleted: 0,
   },
   trophies: [], // array of unlocked trophy IDs

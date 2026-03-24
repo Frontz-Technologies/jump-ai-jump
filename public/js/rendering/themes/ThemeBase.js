@@ -7,7 +7,7 @@ export class ThemeBase {
   drawBackground(_ctx, _canvas, _transition) {}
 
   /** @param {CanvasRenderingContext2D} ctx */
-  drawPlatform(_ctx, _platform, _index, _totalPlatforms) {}
+  drawPlatform(_ctx, _platform, _index, _totalPlatforms, _personalBestIndex) {}
 
   /** @param {CanvasRenderingContext2D} ctx */
   drawCharacter(_ctx, _character) {}

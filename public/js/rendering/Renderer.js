@@ -71,6 +71,7 @@ export class Renderer {
       ghosts,
       planet,
       sliding,
+      personalBestIndex,
     } = options;
     const canvas = { width: this.displayWidth, height: this.displayHeight };
 
@@ -100,7 +101,7 @@ export class Renderer {
     for (const entry of visiblePlatforms) {
       const p = entry.platform;
       const i = entry.index;
-      this.theme.drawPlatform(ctx, p, i, visiblePlatforms.length);
+      this.theme.drawPlatform(ctx, p, i, visiblePlatforms.length, personalBestIndex);
     }
 
     // Ghost players (drawn behind local character)
