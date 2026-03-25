@@ -620,9 +620,8 @@ export class CharacterRenderer {
         eye.pupil.visible = blinkScale > 0.2;
       }
     } else {
-      // Reset sclera scale when not blinking
+      // Ensure pupils are visible when not blinking (sclera scale owned by _updateExpression)
       for (const eye of this._eyeGroups) {
-        eye.sclera.scale.y = 1;
         eye.pupil.visible = true;
       }
     }
