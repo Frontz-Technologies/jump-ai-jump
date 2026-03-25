@@ -8,6 +8,7 @@ const EARTH_GRAVITY_PX = 1800;
 const EARTH_G_REAL = 9.81;
 const SCALE = EARTH_GRAVITY_PX / EARTH_G_REAL; // ~183.49 px per m/s²
 const DRAG_COEFF = 0.0003; // tuning constant for F = DRAG_COEFF * airDensity * |v| * v
+const WIND_SCALE = 8; // px/s² per m/s of wind — tuned for playability (gravity SCALE is ~183.49)
 
 export const PLATFORMS_PER_STAGE = 10;
 
@@ -244,5 +245,5 @@ export function makePlanetFromGalaxy(galaxyPlanet) {
 }
 
 // Re-export base constants for reference
-export { EARTH_GRAVITY_PX, EARTH_G_REAL, SCALE, DRAG_COEFF };
+export { EARTH_GRAVITY_PX, EARTH_G_REAL, SCALE, DRAG_COEFF, WIND_SCALE };
 export { BASE_MIN_VX, BASE_MAX_VX, BASE_MIN_VY, BASE_MAX_VY, BASE_TERMINAL_VY };

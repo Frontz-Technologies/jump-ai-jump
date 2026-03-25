@@ -16,6 +16,7 @@ import {
   PLATFORMS_PER_STAGE,
   TOTAL_PLATFORMS as _TOTAL_PLATFORMS,
   makePlanetFromGalaxy,
+  WIND_SCALE,
 } from '../data/PlanetConfig.js';
 import { DifficultyManager } from './DifficultyManager.js';
 import { GhostNetwork } from '../net/GhostNetwork.js';
@@ -1313,8 +1314,7 @@ export class Game {
 
     // Wind and per-platform friction
     const wind = this.difficulty.getStageWind(this.stageIndex);
-    const SCALE = 183.49;
-    const windAccel = wind * SCALE;
+    const windAccel = wind * WIND_SCALE;
     const friction = nextPlat.surfaceFriction ?? planet.surfaceFriction ?? 1.0;
 
     let bestPower = 0.5;
