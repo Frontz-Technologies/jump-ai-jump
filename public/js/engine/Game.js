@@ -38,6 +38,7 @@ const ANIM_SPEED = 4; // how fast platforms drop in (higher = faster)
 export class Game {
   constructor(canvas, analytics) {
     this._analytics = analytics;
+    this._canvas = canvas;
     this.state = GameState.MENU;
     this.storage = new Storage();
     this.audio = new AudioManager();
@@ -229,12 +230,63 @@ export class Game {
   _initSettings() {
     this.settingsModal = new SettingsModal(this.storage, {
       onSoundChange: (on) => this.audio.setEnabled(on),
+      onRendererChange: (use3d) => this._swapRenderer(use3d),
       onStopGame: () => {
         this.settingsModal.close();
         this._showMenu();
       },
     });
     this.statsModal = new StatsModal(this.storage);
+
+    // Apply saved renderer preference on boot
+    if (this.storage.getSettings().renderer3d) {
+      this._swapRenderer(true);
+    }
+  }
+
+  async _swapRenderer(use3d) {
+    const canvas = this._canvas;
+
+    // Preserve camera state
+    const { cameraX, cameraTargetX, cameraY, cameraTargetY } = this.renderer;
+
+    if (use3d) {
+      try {
+        const { ThreeJSRenderer } = await import('../rendering/ThreeJSRenderer.js');
+        const { ThreeJSTheme } = await import('../rendering/themes/ThreeJSTheme.js');
+
+        this.renderer.destroy();
+        this.renderer = new ThreeJSRenderer(canvas);
+        this.theme = new ThreeJSTheme();
+        const allPlanets = this._galaxyPlanets.length
+          ? [PLANET_CONFIGS[0], PLANET_CONFIGS[1], ...this._galaxyPlanets]
+          : PLANET_CONFIGS;
+        this.theme.initStagePalettes(allPlanets.length, allPlanets);
+        this.renderer.setTheme(this.theme);
+      } catch (err) {
+        console.error('Failed to load Three.js renderer:', err);
+        // Revert toggle
+        this.storage.setSetting('renderer3d', false);
+        const toggle = document.getElementById('setting-renderer-3d');
+        if (toggle) toggle.checked = false;
+        return;
+      }
+    } else {
+      if (this.renderer.destroy) this.renderer.destroy();
+      this.renderer = new Renderer(canvas);
+      this.theme = new PlanetaryTheme();
+      const allPlanets = this._galaxyPlanets.length
+        ? [PLANET_CONFIGS[0], PLANET_CONFIGS[1], ...this._galaxyPlanets]
+        : PLANET_CONFIGS;
+      this.theme.initStagePalettes(allPlanets.length, allPlanets);
+      this.renderer.setTheme(this.theme);
+    }
+
+    // Restore camera state
+    this.renderer.cameraX = cameraX;
+    this.renderer.cameraTargetX = cameraTargetX;
+    this.renderer.cameraY = cameraY;
+    this.renderer.cameraTargetY = cameraTargetY;
   }
 
   _initLeaderboard() {
