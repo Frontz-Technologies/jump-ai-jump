@@ -229,6 +229,10 @@ export class Game {
   _initSettings() {
     this.settingsModal = new SettingsModal(this.storage, {
       onSoundChange: (on) => this.audio.setEnabled(on),
+      onStopGame: () => {
+        this.settingsModal.close();
+        this._showMenu();
+      },
     });
     this.statsModal = new StatsModal(this.storage);
   }
@@ -237,10 +241,12 @@ export class Game {
     const menuBtn = document.getElementById('menu-leaderboard');
     const goBtn = document.getElementById('btn-gameover-leaderboard');
     const vicBtn = document.getElementById('btn-victory-leaderboard');
+    const hudBtn = document.getElementById('btn-leaderboard');
     const openLb = () => this.leaderboardModal.open(this.galaxyClient.getGalaxyId());
     if (menuBtn) menuBtn.addEventListener('click', openLb);
     if (goBtn) goBtn.addEventListener('click', openLb);
     if (vicBtn) vicBtn.addEventListener('click', openLb);
+    if (hudBtn) hudBtn.addEventListener('click', openLb);
   }
 
   async _loadMenuGalaxyInfo() {

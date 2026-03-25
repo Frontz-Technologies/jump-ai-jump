@@ -12,6 +12,8 @@ export class SettingsModal {
     this.touristToggle = document.getElementById('setting-tourist');
     this.touristRow = document.getElementById('tourist-toggle-row');
     this.nameInput = document.getElementById('setting-name');
+    this.stopGameRow = document.getElementById('stop-game-row');
+    this.stopGameBtn = document.getElementById('btn-stop-game');
 
     // Init from saved settings
     const settings = storage.getSettings();
@@ -50,6 +52,11 @@ export class SettingsModal {
       });
     }
 
+    // Stop game button
+    if (this.stopGameBtn && callbacks.onStopGame) {
+      this.stopGameBtn.addEventListener('click', callbacks.onStopGame);
+    }
+
     // Close
     this.modal.querySelector('.close-btn').addEventListener('click', () => this.close());
     this.modal.querySelector('.modal-backdrop').addEventListener('click', () => this.close());
@@ -77,10 +84,13 @@ export class SettingsModal {
     return !this.modal.classList.contains('hidden');
   }
 
-  /** Show/hide the tourist toggle based on whether we're in the main menu. */
+  /** Show/hide context-dependent rows based on whether we're in the main menu. */
   setMenuContext(isMenu) {
     if (this.touristRow) {
       this.touristRow.style.display = isMenu ? '' : 'none';
+    }
+    if (this.stopGameRow) {
+      this.stopGameRow.style.display = isMenu ? 'none' : '';
     }
   }
 }
