@@ -258,6 +258,10 @@ export class Game {
         this.renderer.destroy();
         this.renderer = new ThreeJSRenderer(canvas);
         this.theme = new ThreeJSTheme();
+        const allPlanets = this._galaxyPlanets.length
+          ? [PLANET_CONFIGS[0], PLANET_CONFIGS[1], ...this._galaxyPlanets]
+          : PLANET_CONFIGS;
+        this.theme.initStagePalettes(allPlanets.length, allPlanets);
         this.renderer.setTheme(this.theme);
       } catch (err) {
         console.error('Failed to load Three.js renderer:', err);
@@ -271,7 +275,7 @@ export class Game {
       if (this.renderer.destroy) this.renderer.destroy();
       this.renderer = new Renderer(canvas);
       this.theme = new PlanetaryTheme();
-      const allPlanets = this._galaxyPlanets
+      const allPlanets = this._galaxyPlanets.length
         ? [PLANET_CONFIGS[0], PLANET_CONFIGS[1], ...this._galaxyPlanets]
         : PLANET_CONFIGS;
       this.theme.initStagePalettes(allPlanets.length, allPlanets);
