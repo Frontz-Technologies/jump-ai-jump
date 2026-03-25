@@ -213,7 +213,7 @@ export class CharacterRenderer {
 
     // --- Afterimage trail ---
     this._afterimages = [];
-    const afterGeom = this._makeRoundedBoxGeometry(40, 40, 16, 4);
+    this._afterGeom = this._makeRoundedBoxGeometry(40, 40, 16, 4);
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
       const mat = new THREE.MeshStandardMaterial({
         color: BODY_COLOR,
@@ -221,7 +221,7 @@ export class CharacterRenderer {
         opacity: 0,
         depthWrite: false,
       });
-      const mesh = new THREE.Mesh(afterGeom, mat);
+      const mesh = new THREE.Mesh(this._afterGeom, mat);
       mesh.visible = false;
       mesh.renderOrder = -1;
       this._afterimages.push({ mesh, mat });
@@ -604,17 +604,26 @@ export class CharacterRenderer {
     ) {
       const halfDur = 0.075;
       const bp = character.blinkPhase;
+      // bp counts down from ~0.15 to 0: first half closes, second half opens
       let blinkScale;
       if (bp > halfDur) {
-        blinkScale = (0.15 - bp) / halfDur;
+        // Closing: 1 → 0 as bp goes from 0.15 → halfDur
+        blinkScale = (bp - halfDur) / halfDur;
       } else {
-        blinkScale = bp / halfDur;
+        // Opening: 0 → 1 as bp goes from halfDur → 0
+        blinkScale = 1 - bp / halfDur;
       }
       blinkScale = Math.max(0.05, blinkScale);
 
       for (const eye of this._eyeGroups) {
         eye.sclera.scale.y = blinkScale;
         eye.pupil.visible = blinkScale > 0.2;
+      }
+    } else {
+      // Reset sclera scale when not blinking
+      for (const eye of this._eyeGroups) {
+        eye.sclera.scale.y = 1;
+        eye.pupil.visible = true;
       }
     }
   }
@@ -658,8 +667,9 @@ export class CharacterRenderer {
       }
     });
 
+    // Dispose shared afterimage geometry once, then materials
+    if (this._afterGeom) this._afterGeom.dispose();
     for (const ai of this._afterimages) {
-      if (ai.mesh.geometry) ai.mesh.geometry.dispose();
       ai.mat.dispose();
     }
   }
