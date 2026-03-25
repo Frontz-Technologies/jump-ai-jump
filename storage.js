@@ -399,25 +399,22 @@ async function aggregateLeaderboard(opts) {
       const galaxyMap = {};
       for (const g of galaxies || []) galaxyMap[g.galaxy_id] = g;
 
-      // Aggregate best per player
-      const playerBest = {};
+      // Return all per-galaxy records (one per player per galaxy)
+      const allRecords = [];
       for (const e of entries || []) {
-        const key = e.player_id || e.player_name;
-        if (!playerBest[key] || e.highest_stage > playerBest[key].highestStage) {
-          const galaxy = galaxyMap[e.galaxy_id] || { name: 'Unknown', created_at: null };
-          playerBest[key] = {
-            playerName: e.player_name,
-            highestStage: e.highest_stage,
-            galaxyName: galaxy.name,
-            galaxyId: e.galaxy_id,
-            date: e.submitted_at || galaxy.created_at,
-          };
-        }
+        const galaxy = galaxyMap[e.galaxy_id] || { name: 'Unknown', created_at: null };
+        allRecords.push({
+          playerName: e.player_name,
+          highestStage: e.highest_stage,
+          galaxyName: galaxy.name,
+          galaxyId: e.galaxy_id,
+          date: e.submitted_at || galaxy.created_at,
+        });
       }
 
-      return Object.values(playerBest)
-        .sort((a, b) => b.highestStage - a.highestStage)
-        .slice(0, 50);
+      return allRecords
+        .sort((a, b) => b.highestStage - a.highestStage || (a.date > b.date ? -1 : 1))
+        .slice(0, 100);
     } catch (err) {
       console.error('[Storage] aggregateLeaderboard error:', err.message);
       return [];
@@ -435,7 +432,7 @@ async function aggregateLeaderboard(opts) {
   const galaxyMap = {};
   for (const g of galaxies) galaxyMap[g.galaxyId] = g;
 
-  const playerBest = {};
+  const allRecords = [];
   for (const file of files) {
     const galaxyId = file.replace('.json', '');
     const galaxy = galaxyMap[galaxyId] || { name: 'Unknown', createdAt: null };
@@ -443,23 +440,20 @@ async function aggregateLeaderboard(opts) {
       const entries = JSON.parse(fs.readFileSync(path.join(LEADERBOARDS_DIR, file), 'utf-8'));
       for (const e of entries) {
         if (filterFn && !filterFn(e)) continue;
-        const key = e.playerId || e.playerName;
-        if (!playerBest[key] || e.highestStage > playerBest[key].highestStage) {
-          playerBest[key] = {
-            playerName: e.playerName,
-            highestStage: e.highestStage,
-            galaxyName: galaxy.name,
-            galaxyId,
-            date: e.submittedAt || galaxy.createdAt,
-          };
-        }
+        allRecords.push({
+          playerName: e.playerName,
+          highestStage: e.highestStage,
+          galaxyName: galaxy.name,
+          galaxyId,
+          date: e.submittedAt || galaxy.createdAt,
+        });
       }
     } catch {}
   }
 
-  return Object.values(playerBest)
-    .sort((a, b) => b.highestStage - a.highestStage)
-    .slice(0, 50);
+  return allRecords
+    .sort((a, b) => b.highestStage - a.highestStage || (a.date > b.date ? -1 : 1))
+    .slice(0, 100);
 }
 
 async function loadLeaderboardHistory(opts) {
