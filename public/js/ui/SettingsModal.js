@@ -11,6 +11,7 @@ export class SettingsModal {
     this.soundToggle = document.getElementById('setting-sound');
     this.touristToggle = document.getElementById('setting-tourist');
     this.touristRow = document.getElementById('tourist-toggle-row');
+    this.rendererToggle = document.getElementById('setting-renderer-3d');
     this.nameInput = document.getElementById('setting-name');
     this.stopGameRow = document.getElementById('stop-game-row');
     this.stopGameBtn = document.getElementById('btn-stop-game');
@@ -19,6 +20,9 @@ export class SettingsModal {
     const settings = storage.getSettings();
     this.soundToggle.checked = settings.sound;
     this.touristToggle.checked = settings.humanTourist === true;
+    if (this.rendererToggle) {
+      this.rendererToggle.checked = settings.renderer3d === true;
+    }
 
     // Init name
     const name = storage.getPlayerName();
@@ -36,6 +40,16 @@ export class SettingsModal {
     this.touristToggle.addEventListener('change', () => {
       storage.setSetting('humanTourist', this.touristToggle.checked);
     });
+
+    if (this.rendererToggle) {
+      this.rendererToggle.addEventListener('change', () => {
+        const use3d = this.rendererToggle.checked;
+        storage.setSetting('renderer3d', use3d);
+        if (callbacks.onRendererChange) {
+          callbacks.onRendererChange(use3d);
+        }
+      });
+    }
 
     // Name input — save on blur or Enter
     if (this.nameInput) {

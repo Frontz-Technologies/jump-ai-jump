@@ -5,6 +5,7 @@ const DEFAULT_DATA = {
     sound: true,
     darkMode: false,
     humanTourist: false,
+    renderer3d: false,
   },
   stats: {
     totalGames: 0,

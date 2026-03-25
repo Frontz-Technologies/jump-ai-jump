@@ -28,6 +28,14 @@
     <link rel="stylesheet" href="css/modals.css" />
   </head>
   <body>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.171.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.171.0/examples/jsm/"
+        }
+      }
+    </script>
     <div id="game-container">
       <canvas id="game-canvas"></canvas>
 
@@ -306,6 +314,11 @@
                 >Human Tourist <small style="opacity: 0.6">easier + planet checkpoints</small></span
               >
               <input type="checkbox" id="setting-tourist" />
+              <span class="toggle-slider"></span>
+            </label>
+            <label class="toggle-row" id="renderer-toggle-row">
+              <span>Enhanced 3D <small style="opacity: 0.6">experimental</small></span>
+              <input type="checkbox" id="setting-renderer-3d" />
               <span class="toggle-slider"></span>
             </label>
             <div id="stop-game-row" class="setting-row" style="display: none; margin-top: 16px">
