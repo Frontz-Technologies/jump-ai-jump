@@ -35,6 +35,7 @@ export class ThreeJSRenderer {
     this._webglRenderer.outputColorSpace = THREE.SRGBColorSpace;
 
     this._scene = new THREE.Scene();
+    this._scene.background = new THREE.Color(0x87ceeb);
 
     // Orthographic camera — y-down to match Canvas coordinate system
     this._camera = new THREE.OrthographicCamera(0, 1, 0, -1, 0.1, 1000);
@@ -92,7 +93,7 @@ export class ThreeJSRenderer {
     }
     this.theme = theme;
     if (theme && theme.attachToScene) {
-      theme.attachToScene(this._bgLayer, this._worldLayer, this._hudLayer);
+      theme.attachToScene(this._bgLayer, this._worldLayer, this._hudLayer, this._scene);
     }
   }
 

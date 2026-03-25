@@ -36,8 +36,6 @@ export class ThreeJSTheme extends ThemeBase {
     });
 
     // Meshes (created in attachToScene)
-    this._bgMesh = null;
-    this._bgMaterial = null;
     this._characterMesh = null;
     this._platformPool = [];
     this._ghostMeshes = [];
@@ -77,17 +75,11 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   /** Called by ThreeJSRenderer.setTheme() — add persistent meshes to layers. */
-  attachToScene(bgLayer, worldLayer, hudLayer) {
+  attachToScene(bgLayer, worldLayer, hudLayer, scene) {
     this._bgLayer = bgLayer;
     this._worldLayer = worldLayer;
     this._hudLayer = hudLayer;
-
-    // Background plane
-    const bgGeom = new THREE.PlaneGeometry(1, 1);
-    this._bgMaterial = new THREE.MeshBasicMaterial({ color: 0x87ceeb });
-    this._bgMesh = new THREE.Mesh(bgGeom, this._bgMaterial);
-    this._bgMesh.position.z = -10;
-    bgLayer.add(this._bgMesh);
+    this._scene = scene;
 
     // Character mesh (simple box — will be replaced with sprite later)
     this._characterMesh = new THREE.Mesh(this._boxGeom, this._characterMaterial);
@@ -116,10 +108,6 @@ export class ThreeJSTheme extends ThemeBase {
 
   /** Called when switching away from this theme. Disposes GPU resources. */
   detachFromScene(bgLayer, worldLayer, hudLayer) {
-    if (this._bgMesh) {
-      bgLayer.remove(this._bgMesh);
-      this._bgMesh.geometry.dispose();
-    }
     if (this._characterMesh) worldLayer.remove(this._characterMesh);
     for (const mesh of this._platformPool) {
       worldLayer.remove(mesh);
@@ -141,7 +129,7 @@ export class ThreeJSTheme extends ThemeBase {
     this._characterMaterial.dispose();
     this._ghostMaterial.dispose();
     this._bestMaterial.dispose();
-    if (this._bgMaterial) this._bgMaterial.dispose();
+    this._scene = null;
     if (this._atmoMaterial) this._atmoMaterial.dispose();
   }
 
@@ -183,20 +171,16 @@ export class ThreeJSTheme extends ThemeBase {
     }
   }
 
-  _updateBackground(w, h, transition, planetIndex) {
-    if (!this._bgMesh) return;
-
-    this._bgMesh.scale.set(w, h, 1);
-    this._bgMesh.position.x = w / 2;
-    this._bgMesh.position.y = h / 2;
+  _updateBackground(_w, _h, transition, planetIndex) {
+    if (!this._scene) return;
 
     // Use planet sky color if available
     if (transition && transition.skyColor) {
-      this._bgMaterial.color.set(transition.skyColor);
+      this._scene.background.set(transition.skyColor);
     } else if (planetIndex != null) {
       const planet = PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)];
       if (planet && planet.skyColor) {
-        this._bgMaterial.color.set(planet.skyColor);
+        this._scene.background.set(planet.skyColor);
       }
     }
   }
