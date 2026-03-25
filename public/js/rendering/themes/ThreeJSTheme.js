@@ -1,13 +1,14 @@
 import * as THREE from 'three';
 import { ThemeBase } from './ThemeBase.js';
 import { PLANET_CONFIGS } from '../../data/PlanetConfig.js';
+import { CharacterRenderer } from '../threejs/CharacterRenderer.js';
 
 const PLATFORM_POOL_SIZE = 50;
 
 /**
- * Three.js theme — foundation stub.
- * Renders platforms, character, and ghosts as colored 3D boxes.
- * Subsequent issues will add sprites, textures, and environments.
+ * Three.js theme — procedural 3D rendering with expressive character.
+ * Character rendered via CharacterRenderer with expressions, helmet, and afterimages.
+ * Platforms and ghosts rendered as colored 3D boxes.
  */
 export class ThreeJSTheme extends ThemeBase {
   constructor() {
@@ -17,12 +18,11 @@ export class ThreeJSTheme extends ThemeBase {
     this._worldLayer = null;
     this._hudLayer = null;
 
-    // Shared geometry (reused across all meshes)
+    // Shared geometry (reused across platform and ghost meshes)
     this._boxGeom = new THREE.BoxGeometry(1, 1, 1);
 
     // Materials
     this._platformMaterial = new THREE.MeshStandardMaterial({ color: 0x6b8f71 });
-    this._characterMaterial = new THREE.MeshStandardMaterial({ color: 0xe85d4a });
     this._ghostMaterial = new THREE.MeshStandardMaterial({
       color: 0xaaaaff,
       transparent: true,
@@ -35,8 +35,8 @@ export class ThreeJSTheme extends ThemeBase {
       emissiveIntensity: 0.3,
     });
 
-    // Meshes (created in attachToScene)
-    this._characterMesh = null;
+    // Renderers / meshes (created in attachToScene)
+    this._characterRenderer = null;
     this._platformPool = [];
     this._ghostMeshes = [];
 
@@ -48,6 +48,8 @@ export class ThreeJSTheme extends ThemeBase {
     this.stagePalettes = null;
     this._currentBg = '#87CEEB';
     this._planetIndex = 0;
+    this._power = 0;
+    this._startTime = performance.now() * 0.001;
   }
 
   // --- Theme interface methods (called by Game.js) ---
@@ -81,9 +83,9 @@ export class ThreeJSTheme extends ThemeBase {
     this._hudLayer = hudLayer;
     this._scene = scene;
 
-    // Character mesh (simple box — will be replaced with sprite later)
-    this._characterMesh = new THREE.Mesh(this._boxGeom, this._characterMaterial);
-    worldLayer.add(this._characterMesh);
+    // Procedural character with expressions, helmet, afterimages
+    this._characterRenderer = new CharacterRenderer();
+    this._characterRenderer.attachTo(worldLayer);
 
     // Platform pool
     for (let i = 0; i < PLATFORM_POOL_SIZE; i++) {
@@ -107,13 +109,21 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   /** Called when switching away from this theme. Disposes GPU resources. */
-  detachFromScene(bgLayer, worldLayer, hudLayer) {
-    if (this._characterMesh) worldLayer.remove(this._characterMesh);
+  detachFromScene(_bgLayer, worldLayer, hudLayer) {
+    if (this._characterRenderer) {
+      this._characterRenderer.detachFrom(worldLayer);
+      this._characterRenderer.dispose();
+      this._characterRenderer = null;
+    }
     for (const mesh of this._platformPool) {
       worldLayer.remove(mesh);
     }
-    for (const mesh of this._ghostMeshes) {
-      worldLayer.remove(mesh);
+    for (const ghost of this._ghostMeshes) {
+      worldLayer.remove(ghost.mesh);
+      ghost.mesh.traverse((obj) => {
+        if (obj.geometry) obj.geometry.dispose();
+        if (obj.material) obj.material.dispose();
+      });
     }
     if (this._atmoMesh) {
       hudLayer.remove(this._atmoMesh);
@@ -126,7 +136,6 @@ export class ThreeJSTheme extends ThemeBase {
     // Dispose shared GPU resources
     this._boxGeom.dispose();
     this._platformMaterial.dispose();
-    this._characterMaterial.dispose();
     this._ghostMaterial.dispose();
     this._bestMaterial.dispose();
     this._scene = null;
@@ -139,7 +148,10 @@ export class ThreeJSTheme extends ThemeBase {
    */
   updateFrame(character, visiblePlatforms, options, camera) {
     const { displayWidth, displayHeight } = camera;
-    const { bgTransition, ghosts, personalBestIndex, planetIndex } = options;
+    const { bgTransition, ghosts, personalBestIndex, planetIndex, power } = options;
+
+    this._planetIndex = planetIndex ?? this._planetIndex;
+    this._power = power ?? 0;
 
     this._updateBackground(displayWidth, displayHeight, bgTransition, planetIndex);
     this._updatePlatforms(visiblePlatforms, personalBestIndex);
@@ -206,37 +218,83 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   _updateCharacter(character) {
-    if (!this._characterMesh || !character) return;
-    this._characterMesh.position.set(
-      character.x + character.width / 2,
-      character.y + character.height / 2,
-      5,
-    );
-    this._characterMesh.scale.set(
-      character.width * (character.scaleX || 1),
-      character.height * (character.scaleY || 1),
-      character.width,
-    );
+    if (!this._characterRenderer || !character) return;
+
+    const time = performance.now() * 0.001 - this._startTime;
+    this._characterRenderer.update(character, {
+      planetIndex: this._planetIndex,
+      power: this._power,
+      time,
+    });
   }
 
   _updateGhosts(ghosts) {
-    // Grow pool if needed
+    // Grow ghost pool if needed — simplified body + eyes meshes
     while (this._ghostMeshes.length < ghosts.length) {
-      const mesh = new THREE.Mesh(this._boxGeom, this._ghostMaterial);
-      mesh.visible = false;
-      if (this._worldLayer) this._worldLayer.add(mesh);
-      this._ghostMeshes.push(mesh);
+      const ghostObj = this._createGhostMesh();
+      if (this._worldLayer) this._worldLayer.add(ghostObj.mesh);
+      this._ghostMeshes.push(ghostObj);
     }
 
     // Hide all, then show active
-    for (const m of this._ghostMeshes) m.visible = false;
+    for (const g of this._ghostMeshes) g.mesh.visible = false;
     for (let i = 0; i < ghosts.length; i++) {
       const g = ghosts[i];
-      const mesh = this._ghostMeshes[i];
-      mesh.visible = true;
-      mesh.position.set(g.x + g.width / 2, g.y + g.height / 2, 3);
-      mesh.scale.set(g.width, g.height, g.width);
+      const ghostObj = this._ghostMeshes[i];
+      ghostObj.mesh.visible = true;
+      ghostObj.mesh.position.set(g.x + (g.width || 40) / 2, g.y + (g.height || 40) / 2, 3);
+      ghostObj.mesh.scale.set(g.scaleX || 1, g.scaleY || 1, 1);
+
+      // Tint by hue if available
+      if (g.hue != null) {
+        ghostObj.bodyMat.color.setHSL(g.hue / 360, 0.6, 0.65);
+      }
     }
+  }
+
+  /**
+   * Create a simplified ghost character mesh (body + eyes, semi-transparent).
+   */
+  _createGhostMesh() {
+    const group = new THREE.Group();
+
+    // Body
+    const bodyGeom = new THREE.BoxGeometry(40, 40, 16, 2, 2, 2);
+    const bodyMat = new THREE.MeshStandardMaterial({
+      color: 0xaaaaff,
+      transparent: true,
+      opacity: 0.4,
+      depthWrite: false,
+    });
+    const bodyMesh = new THREE.Mesh(bodyGeom, bodyMat);
+    group.add(bodyMesh);
+
+    // Eyes (simple white spheres)
+    const eyeGeom = new THREE.SphereGeometry(4, 8, 6);
+    const eyeMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      transparent: true,
+      opacity: 0.5,
+    });
+    for (let side = -1; side <= 1; side += 2) {
+      const eyeMesh = new THREE.Mesh(eyeGeom, eyeMat);
+      eyeMesh.position.set(side * 7, -3, 9);
+      eyeMesh.scale.set(1, 1, 0.5);
+      group.add(eyeMesh);
+
+      // Pupil
+      const pupilGeom = new THREE.SphereGeometry(2, 8, 6);
+      const pupilMat = new THREE.MeshStandardMaterial({
+        color: 0x2a2a2a,
+        transparent: true,
+        opacity: 0.5,
+      });
+      const pupilMesh = new THREE.Mesh(pupilGeom, pupilMat);
+      pupilMesh.position.set(side * 7, -3, 11);
+      group.add(pupilMesh);
+    }
+
+    return { mesh: group, bodyMat };
   }
 
   // Canvas ThemeBase stubs (no-ops for 3D renderer)
