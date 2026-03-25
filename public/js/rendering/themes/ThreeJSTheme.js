@@ -1,8 +1,7 @@
 import * as THREE from 'three';
 import { ThemeBase } from './ThemeBase.js';
 import { PLANET_CONFIGS } from '../../data/PlanetConfig.js';
-
-const PLATFORM_POOL_SIZE = 50;
+import { PlatformRenderer } from '../threejs/PlatformRenderer.js';
 
 /**
  * Three.js theme — foundation stub.
@@ -21,7 +20,6 @@ export class ThreeJSTheme extends ThemeBase {
     this._boxGeom = new THREE.BoxGeometry(1, 1, 1);
 
     // Materials
-    this._platformMaterial = new THREE.MeshStandardMaterial({ color: 0x6b8f71 });
     this._characterMaterial = new THREE.MeshStandardMaterial({ color: 0xe85d4a });
     this._ghostMaterial = new THREE.MeshStandardMaterial({
       color: 0xaaaaff,
@@ -29,15 +27,9 @@ export class ThreeJSTheme extends ThemeBase {
       opacity: 0.4,
     });
 
-    this._bestMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf0c050,
-      emissive: 0xf0c050,
-      emissiveIntensity: 0.3,
-    });
-
     // Meshes (created in attachToScene)
     this._characterMesh = null;
-    this._platformPool = [];
+    this._platformRenderer = null;
     this._ghostMeshes = [];
 
     // Atmosphere overlay
@@ -85,13 +77,9 @@ export class ThreeJSTheme extends ThemeBase {
     this._characterMesh = new THREE.Mesh(this._boxGeom, this._characterMaterial);
     worldLayer.add(this._characterMesh);
 
-    // Platform pool
-    for (let i = 0; i < PLATFORM_POOL_SIZE; i++) {
-      const mesh = new THREE.Mesh(this._boxGeom, this._platformMaterial);
-      mesh.visible = false;
-      worldLayer.add(mesh);
-      this._platformPool.push(mesh);
-    }
+    // Platforms
+    this._platformRenderer = new PlatformRenderer();
+    this._platformRenderer.attachTo(worldLayer);
 
     // Atmosphere overlay (screen-space, in hud layer)
     const atmoGeom = new THREE.PlaneGeometry(1, 1);
@@ -107,11 +95,9 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   /** Called when switching away from this theme. Disposes GPU resources. */
-  detachFromScene(bgLayer, worldLayer, hudLayer) {
+  detachFromScene(_bgLayer, worldLayer, hudLayer) {
     if (this._characterMesh) worldLayer.remove(this._characterMesh);
-    for (const mesh of this._platformPool) {
-      worldLayer.remove(mesh);
-    }
+    if (this._platformRenderer) this._platformRenderer.dispose();
     for (const mesh of this._ghostMeshes) {
       worldLayer.remove(mesh);
     }
@@ -120,15 +106,13 @@ export class ThreeJSTheme extends ThemeBase {
       this._atmoMesh.geometry.dispose();
     }
 
-    this._platformPool = [];
+    this._platformRenderer = null;
     this._ghostMeshes = [];
 
     // Dispose shared GPU resources
     this._boxGeom.dispose();
-    this._platformMaterial.dispose();
     this._characterMaterial.dispose();
     this._ghostMaterial.dispose();
-    this._bestMaterial.dispose();
     this._scene = null;
     if (this._atmoMaterial) this._atmoMaterial.dispose();
   }
@@ -186,22 +170,8 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   _updatePlatforms(visiblePlatforms, personalBestIndex) {
-    // Hide all pool meshes
-    for (const m of this._platformPool) m.visible = false;
-
-    for (let i = 0; i < visiblePlatforms.length && i < this._platformPool.length; i++) {
-      const { platform: p, index } = visiblePlatforms[i];
-      const mesh = this._platformPool[i];
-      mesh.visible = true;
-      mesh.position.set(p.x + p.width / 2, p.y + p.height / 2, 0);
-      mesh.scale.set(p.width, p.height, 12);
-
-      // Highlight personal best platform
-      if (index === personalBestIndex) {
-        mesh.material = this._bestMaterial;
-      } else {
-        mesh.material = this._platformMaterial;
-      }
+    if (this._platformRenderer) {
+      this._platformRenderer.sync(visiblePlatforms, this._planetIndex, personalBestIndex);
     }
   }
 
