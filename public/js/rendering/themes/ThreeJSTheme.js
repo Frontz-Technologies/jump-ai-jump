@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { ThemeBase } from './ThemeBase.js';
+import { PLANET_CONFIGS } from '../../data/PlanetConfig.js';
 
 const PLATFORM_POOL_SIZE = 50;
 
@@ -28,6 +29,12 @@ export class ThreeJSTheme extends ThemeBase {
       opacity: 0.4,
     });
 
+    this._bestMaterial = new THREE.MeshStandardMaterial({
+      color: 0xf0c050,
+      emissive: 0xf0c050,
+      emissiveIntensity: 0.3,
+    });
+
     // Meshes (created in attachToScene)
     this._bgMesh = null;
     this._bgMaterial = null;
@@ -38,6 +45,35 @@ export class ThreeJSTheme extends ThemeBase {
     // Atmosphere overlay
     this._atmoMesh = null;
     this._atmoMaterial = null;
+
+    // Theme interface state (mirrors PlanetaryTheme)
+    this.stagePalettes = null;
+    this._currentBg = '#87CEEB';
+    this._planetIndex = 0;
+  }
+
+  // --- Theme interface methods (called by Game.js) ---
+
+  initStagePalettes(count = 10, planets) {
+    const source = planets || PLANET_CONFIGS;
+    this.stagePalettes = source.slice(0, count).map((p) => ({
+      bg: p.skyColor,
+      platform: p.platformColor,
+      stroke: p.platformStroke,
+    }));
+    this._currentBg = this.stagePalettes[0].bg;
+  }
+
+  getCurrentBg() {
+    return this._currentBg;
+  }
+
+  setCurrentBg(color) {
+    this._currentBg = color;
+  }
+
+  setPlanetIndex(index) {
+    this._planetIndex = index;
   }
 
   /** Called by ThreeJSRenderer.setTheme() — add persistent meshes to layers. */
@@ -78,9 +114,12 @@ export class ThreeJSTheme extends ThemeBase {
     hudLayer.add(this._atmoMesh);
   }
 
-  /** Called when switching away from this theme. */
+  /** Called when switching away from this theme. Disposes GPU resources. */
   detachFromScene(bgLayer, worldLayer, hudLayer) {
-    if (this._bgMesh) bgLayer.remove(this._bgMesh);
+    if (this._bgMesh) {
+      bgLayer.remove(this._bgMesh);
+      this._bgMesh.geometry.dispose();
+    }
     if (this._characterMesh) worldLayer.remove(this._characterMesh);
     for (const mesh of this._platformPool) {
       worldLayer.remove(mesh);
@@ -88,10 +127,22 @@ export class ThreeJSTheme extends ThemeBase {
     for (const mesh of this._ghostMeshes) {
       worldLayer.remove(mesh);
     }
-    if (this._atmoMesh) hudLayer.remove(this._atmoMesh);
+    if (this._atmoMesh) {
+      hudLayer.remove(this._atmoMesh);
+      this._atmoMesh.geometry.dispose();
+    }
 
     this._platformPool = [];
     this._ghostMeshes = [];
+
+    // Dispose shared GPU resources
+    this._boxGeom.dispose();
+    this._platformMaterial.dispose();
+    this._characterMaterial.dispose();
+    this._ghostMaterial.dispose();
+    this._bestMaterial.dispose();
+    if (this._bgMaterial) this._bgMaterial.dispose();
+    if (this._atmoMaterial) this._atmoMaterial.dispose();
   }
 
   /**
@@ -143,21 +194,10 @@ export class ThreeJSTheme extends ThemeBase {
     if (transition && transition.skyColor) {
       this._bgMaterial.color.set(transition.skyColor);
     } else if (planetIndex != null) {
-      // Import would be circular — use a simple lookup
-      const skyColors = [
-        0x87ceeb, // Earth
-        0x0a0a2e, // Stratosphere
-        0x000000, // Moon
-        0xc1440e, // Mars
-        0x1a1a1a, // Mercury
-        0xb8860b, // Venus
-        0xff8c00, // Titan
-        0xd2691e, // Jupiter
-        0x000011, // Europa
-        0x000005, // Pluto
-      ];
-      const color = skyColors[Math.min(planetIndex, skyColors.length - 1)];
-      this._bgMaterial.color.setHex(color);
+      const planet = PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)];
+      if (planet && planet.skyColor) {
+        this._bgMaterial.color.set(planet.skyColor);
+      }
     }
   }
 
@@ -174,13 +214,7 @@ export class ThreeJSTheme extends ThemeBase {
 
       // Highlight personal best platform
       if (index === personalBestIndex) {
-        mesh.material =
-          this._platformPool._bestMaterial ||
-          (this._platformPool._bestMaterial = new THREE.MeshStandardMaterial({
-            color: 0xf0c050,
-            emissive: 0xf0c050,
-            emissiveIntensity: 0.3,
-          }));
+        mesh.material = this._bestMaterial;
       } else {
         mesh.material = this._platformMaterial;
       }
