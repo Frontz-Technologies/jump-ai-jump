@@ -74,7 +74,7 @@ export class DifficultyManager {
     if (!this._humanTourist) return planet;
     const clampedG = Math.max(0.8, Math.min(15, planet.gReal));
     const clampedAir = Math.min(planet.airDensity, 5.0);
-    const clampedWindMax = Math.min(planet.windMax ?? 0, 30);
+    const clampedWindMax = Math.min(planet.windMax ?? 0, 15);
     const clampedWindMin = Math.min(planet.windMin ?? 0, clampedWindMax);
     const clampedFriction = Math.max(planet.surfaceFriction ?? 1.0, 0.6);
 
@@ -116,7 +116,7 @@ export class DifficultyManager {
   getSafePlanet(planet) {
     if (this._humanTourist) return planet; // tourist mode uses getTouristPlanet instead
     const clampedAir = Math.min(planet.airDensity, 20.0);
-    const clampedWindMax = Math.min(planet.windMax ?? 0, 80);
+    const clampedWindMax = Math.min(planet.windMax ?? 0, 40);
     const clampedWindMin = Math.min(planet.windMin ?? 0, clampedWindMax);
 
     if (

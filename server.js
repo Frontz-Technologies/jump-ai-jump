@@ -136,6 +136,12 @@ WIND:
 - IMPORTANT: If windMax > 0, you SHOULD use wind (non-zero) from stage 3 onward.
   Don't waste it — wind is one of your strongest difficulty tools. Pick values within
   the range. Vary sign between stages (headwind one stage, tailwind the next).
+- PLAYABILITY RULE: When setting wind, you MUST ensure every platform gap is
+  reachable. Headwind shortens horizontal range — compensate by reducing gap sizes
+  or lowering powerExponent on affected jumps. A player using optimal power (0.6–0.9)
+  must be able to reach the next platform even under the worst-case wind drift.
+- For struggling players (high deaths, low accuracy): keep wind ≤ 5 m/s regardless
+  of the planet's wind range.
 
 SURFACE FRICTION (per platform, 0.15–1.8):
 - < 1.0: Slippery — character slides after landing. Lower = longer slide. Can slide off narrow platforms!
@@ -176,7 +182,8 @@ ESCALATION (STRICT — follow these rules):
 - Stages 1–2: TUTORIAL. MANDATORY: wind MUST be 0. surfaceFriction MUST be 1.0 for
   every platform. powerExponent ≤ 1.8. width ≥ 100. gap ≤ 200. rise ≥ 0 (no drops).
   These stages teach the player how the game works. Do NOT add any challenge.
-- Stages 3–10: Introduce friction variation (0.6–1.4), mild wind (±5), rising exponents (up to 2.6).
+- Stages 3–10: Introduce friction variation (0.6–1.4), mild wind (±5–10 m/s), rising exponents
+  (up to 2.6). When using wind, reduce gaps by 10–15% to compensate for drift.
 - Stages 11–30: Compound challenges. Mix icy + narrow, headwind + large gaps.
 - Stages 31–60: Aggressive. Frequent wind, friction extremes, high exponents.
 - Stages 61+: Maximum pressure. Every lever at once. Negative rises. Wind shifts.`;

@@ -1,5 +1,7 @@
 /** Physics constants and helpers — parameterized by planet. */
 
+import { WIND_SCALE } from '../data/PlanetConfig.js';
+
 // Base constants (Earth-level) for reference
 export const BASE_GRAVITY = 1800;
 export const BASE_MIN_VX = 150;
@@ -50,10 +52,9 @@ export function applyPhysics(char, dt, planet, wind = 0) {
   // Gravity
   char.vy += gravity * dt;
 
-  // Wind: horizontal acceleration (m/s converted to px/s² via SCALE)
+  // Wind: horizontal acceleration (m/s converted to px/s² via WIND_SCALE)
   if (wind !== 0) {
-    const SCALE = 183.49; // same as PlanetConfig SCALE (px per m/s²)
-    const windAccel = wind * SCALE;
+    const windAccel = wind * WIND_SCALE;
     char.vx += windAccel * dt;
   }
 
