@@ -33,6 +33,7 @@ export class PlatformRenderer {
   constructor() {
     // Shared geometries
     this._slabGeom = new THREE.BoxGeometry(1, 1, 1);
+    this._topAccentGeom = new THREE.BoxGeometry(1, 0.3, 1);
     this._shadowGeom = new THREE.PlaneGeometry(1, 1);
 
     // Base materials for each surface type
@@ -184,10 +185,7 @@ export class PlatformRenderer {
       group.add(slab);
 
       // Top face accent (thin box on top for grass-type two-tone effect)
-      const topAccent = new THREE.Mesh(
-        new THREE.BoxGeometry(1, 0.3, 1),
-        this._baseMaterials.grass.top,
-      );
+      const topAccent = new THREE.Mesh(this._topAccentGeom, this._baseMaterials.grass.top);
       topAccent.name = 'topAccent';
       topAccent.position.y = -0.35; // y-down: negative is up
       group.add(topAccent);
@@ -260,6 +258,7 @@ export class PlatformRenderer {
     if (this._parent) this.detachFrom(this._parent);
 
     this._slabGeom.dispose();
+    this._topAccentGeom.dispose();
     this._shadowGeom.dispose();
 
     // Dispose base materials
@@ -277,8 +276,5 @@ export class PlatformRenderer {
 
     this._bestMaterial.dispose();
     this._shadowMaterial.dispose();
-
-    // Dispose topAccent geometries (created per pool item)
-    // They were created inline so we can't track them — they'll be GC'd
   }
 }

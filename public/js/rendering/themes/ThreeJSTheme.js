@@ -125,6 +125,8 @@ export class ThreeJSTheme extends ThemeBase {
     const { displayWidth, displayHeight } = camera;
     const { bgTransition, ghosts, personalBestIndex, planetIndex } = options;
 
+    this._planetIndex = planetIndex ?? this._planetIndex;
+
     this._updateBackground(displayWidth, displayHeight, bgTransition, planetIndex);
     this._updatePlatforms(visiblePlatforms, personalBestIndex);
     this._updateCharacter(character);
