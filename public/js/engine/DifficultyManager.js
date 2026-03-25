@@ -592,9 +592,14 @@ export class DifficultyManager {
     }
     if (stageIndex < 0 || stageIndex >= this._configs.length) return;
 
-    // Store wind for this stage
+    // Store wind for this stage, clamped to mode-aware planet windMax
     if (newConfig.wind != null) {
-      this._stageWinds.set(stageIndex, newConfig.wind);
+      const planet = this._allPlanets[Math.min(stageIndex, this._allPlanets.length - 1)];
+      const effectivePlanet = this._humanTourist
+        ? this.getTouristPlanet(planet)
+        : this.getSafePlanet(planet);
+      const maxWind = effectivePlanet.windMax ?? 0;
+      this._stageWinds.set(stageIndex, Math.max(-maxWind, Math.min(maxWind, newConfig.wind)));
     }
 
     // New per-platform format: { platforms: [...] }
