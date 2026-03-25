@@ -1,14 +1,13 @@
 import * as THREE from 'three';
 import { ThemeBase } from './ThemeBase.js';
 import { PLANET_CONFIGS } from '../../data/PlanetConfig.js';
+import { PlatformRenderer } from '../threejs/PlatformRenderer.js';
 import { CharacterRenderer } from '../threejs/CharacterRenderer.js';
-
-const PLATFORM_POOL_SIZE = 50;
 
 /**
  * Three.js theme — procedural 3D rendering with expressive character.
  * Character rendered via CharacterRenderer with expressions, helmet, and afterimages.
- * Platforms and ghosts rendered as colored 3D boxes.
+ * Platforms rendered via PlatformRenderer with 5 surface types and per-planet tinting.
  */
 export class ThreeJSTheme extends ThemeBase {
   constructor() {
@@ -18,26 +17,19 @@ export class ThreeJSTheme extends ThemeBase {
     this._worldLayer = null;
     this._hudLayer = null;
 
-    // Shared geometry (reused across platform and ghost meshes)
+    // Shared geometry (reused across ghost meshes)
     this._boxGeom = new THREE.BoxGeometry(1, 1, 1);
 
     // Materials
-    this._platformMaterial = new THREE.MeshStandardMaterial({ color: 0x6b8f71 });
     this._ghostMaterial = new THREE.MeshStandardMaterial({
       color: 0xaaaaff,
       transparent: true,
       opacity: 0.4,
     });
 
-    this._bestMaterial = new THREE.MeshStandardMaterial({
-      color: 0xf0c050,
-      emissive: 0xf0c050,
-      emissiveIntensity: 0.3,
-    });
-
     // Renderers / meshes (created in attachToScene)
     this._characterRenderer = null;
-    this._platformPool = [];
+    this._platformRenderer = null;
     this._ghostMeshes = [];
 
     // Atmosphere overlay
@@ -87,13 +79,9 @@ export class ThreeJSTheme extends ThemeBase {
     this._characterRenderer = new CharacterRenderer();
     this._characterRenderer.attachTo(worldLayer);
 
-    // Platform pool
-    for (let i = 0; i < PLATFORM_POOL_SIZE; i++) {
-      const mesh = new THREE.Mesh(this._boxGeom, this._platformMaterial);
-      mesh.visible = false;
-      worldLayer.add(mesh);
-      this._platformPool.push(mesh);
-    }
+    // Platforms with 5 surface types and per-planet tinting
+    this._platformRenderer = new PlatformRenderer();
+    this._platformRenderer.attachTo(worldLayer);
 
     // Atmosphere overlay (screen-space, in hud layer)
     const atmoGeom = new THREE.PlaneGeometry(1, 1);
@@ -115,8 +103,9 @@ export class ThreeJSTheme extends ThemeBase {
       this._characterRenderer.dispose();
       this._characterRenderer = null;
     }
-    for (const mesh of this._platformPool) {
-      worldLayer.remove(mesh);
+    if (this._platformRenderer) {
+      this._platformRenderer.dispose();
+      this._platformRenderer = null;
     }
     for (const ghost of this._ghostMeshes) {
       worldLayer.remove(ghost.mesh);
@@ -130,14 +119,11 @@ export class ThreeJSTheme extends ThemeBase {
       this._atmoMesh.geometry.dispose();
     }
 
-    this._platformPool = [];
     this._ghostMeshes = [];
 
     // Dispose shared GPU resources
     this._boxGeom.dispose();
-    this._platformMaterial.dispose();
     this._ghostMaterial.dispose();
-    this._bestMaterial.dispose();
     this._scene = null;
     if (this._atmoMaterial) this._atmoMaterial.dispose();
   }
@@ -198,22 +184,8 @@ export class ThreeJSTheme extends ThemeBase {
   }
 
   _updatePlatforms(visiblePlatforms, personalBestIndex) {
-    // Hide all pool meshes
-    for (const m of this._platformPool) m.visible = false;
-
-    for (let i = 0; i < visiblePlatforms.length && i < this._platformPool.length; i++) {
-      const { platform: p, index } = visiblePlatforms[i];
-      const mesh = this._platformPool[i];
-      mesh.visible = true;
-      mesh.position.set(p.x + p.width / 2, p.y + p.height / 2, 0);
-      mesh.scale.set(p.width, p.height, 12);
-
-      // Highlight personal best platform
-      if (index === personalBestIndex) {
-        mesh.material = this._bestMaterial;
-      } else {
-        mesh.material = this._platformMaterial;
-      }
+    if (this._platformRenderer) {
+      this._platformRenderer.sync(visiblePlatforms, this._planetIndex, personalBestIndex);
     }
   }
 
