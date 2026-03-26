@@ -3,34 +3,29 @@ import * as THREE from 'three';
 /**
  * Sprite-based Three.js character renderer.
  * Loads pre-rendered sprite sheet textures for each pose and swaps them
- * based on game state. Pupils are rendered as separate quads on top of
- * the sprite for dynamic eye tracking. Helmet variants are separate
- * sprite sheets swapped per planet.
+ * based on game state. Eyes/pupils are baked into the sprite sheets.
  *
  * Sprite sheets: 512×128 (4 frames of 128×128), RGBA transparent PNG.
- * Blank white eyes — pupils drawn in realtime.
  */
 
 const ASSET_BASE = '/assets/character/';
-const PUPIL_COLOR = 0x2a2a2a;
 const STAR_EYE_COLOR = 0xffd700;
 const AFTERIMAGE_COUNT = 4;
 
-// Animation: 4 frames per sheet, cycle rate in seconds
 const FRAME_COUNT = 4;
 const IDLE_FRAME_DURATION = 0.5;
 const ACTION_FRAME_DURATION = 0.12;
+const BLINK_FRAME_INDEX = 2;
 
 // Sprite quad size in world units — larger than entity hitbox (40×40)
 // because the sprite frame (128×128) has padding around the character
 const SPRITE_W = 64;
 const SPRITE_H = 64;
 
-// Pupil positioning relative to sprite center (tuned to sprite eye locations)
-const EYE_OFFSET_X = 6; // distance from center to each eye
-const EYE_OFFSET_Y = -2; // eyes slightly above center (negative = up in y-down camera)
-const PUPIL_RADIUS = 2.5;
-const PUPIL_Z = 1; // in front of sprite
+// Eye overlay positions (death X-eyes, victory star-eyes)
+const EYE_OVERLAY_X = 9;
+const EYE_OVERLAY_Y = -9;
+const EYE_OVERLAY_Z = 2;
 
 /** Pose names that map to sprite sheet files. */
 const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
@@ -40,12 +35,10 @@ export class CharacterRenderer {
     /** @type {THREE.Group} */
     this.group = new THREE.Group();
 
-    // --- Sprite textures (loaded async) ---
-    this._textures = {}; // { 'idle': tex, 'charging': tex, ... }
+    this._textures = {};
     this._texturesReady = false;
     this._loadTextures();
 
-    // --- Main sprite quad ---
     const geom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     this._spriteMat = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -55,27 +48,11 @@ export class CharacterRenderer {
     this._spriteMesh = new THREE.Mesh(geom, this._spriteMat);
     this.group.add(this._spriteMesh);
 
-    // --- Pupil overlays (two small circles) ---
-    this._pupils = [];
-    this._pupilGeom = new THREE.CircleGeometry(PUPIL_RADIUS, 12);
-    for (let side = -1; side <= 1; side += 2) {
-      const mat = new THREE.MeshBasicMaterial({
-        color: PUPIL_COLOR,
-        transparent: true,
-        depthWrite: false,
-      });
-      const mesh = new THREE.Mesh(this._pupilGeom, mat);
-      mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
-      this.group.add(mesh);
-      this._pupils.push({ mesh, mat, side });
-    }
-
-    // --- Death X-eyes overlay ---
     this._deathEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const xGroup = new THREE.Group();
-      xGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
-      const xMat = new THREE.MeshBasicMaterial({ color: PUPIL_COLOR });
+      xGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
+      const xMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
       for (let r = 0; r < 2; r++) {
         const bar = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.5), xMat);
         bar.rotation.z = r === 0 ? Math.PI / 4 : -Math.PI / 4;
@@ -86,11 +63,10 @@ export class CharacterRenderer {
       this._deathEyeGroups.push(xGroup);
     }
 
-    // --- Victory star-eyes overlay ---
     this._starEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const starGroup = new THREE.Group();
-      starGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      starGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
       const starMesh = this._createStarMesh(4, STAR_EYE_COLOR);
       starGroup.add(starMesh);
       starGroup.visible = false;
@@ -98,7 +74,6 @@ export class CharacterRenderer {
       this._starEyeGroups.push(starGroup);
     }
 
-    // --- Afterimage trail ---
     this._afterimages = [];
     this._afterGeom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
@@ -113,7 +88,6 @@ export class CharacterRenderer {
       this._afterimages.push({ mesh, mat });
     }
 
-    // Track state
     this._currentPose = '';
     this._currentExpression = '';
     this._frameIndex = 0;
@@ -121,7 +95,6 @@ export class CharacterRenderer {
     this._lastTime = 0;
   }
 
-  /** Load all sprite sheet textures. */
   _loadTextures() {
     const loader = new THREE.TextureLoader();
     let pending = POSES.length;
@@ -143,14 +116,12 @@ export class CharacterRenderer {
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
       tex.colorSpace = THREE.SRGBColorSpace;
-      // Show one frame (1/4 width). Flip Y for y-down camera.
-      tex.repeat.set(0.25, -1);
+      tex.repeat.set(1 / FRAME_COUNT, -1);
       tex.offset.set(0, 1);
       this._textures[pose] = tex;
     }
   }
 
-  /** Create a 5-pointed star mesh for victory eyes. */
   _createStarMesh(radius, color) {
     const shape = new THREE.Shape();
     const points = 5;
@@ -165,17 +136,11 @@ export class CharacterRenderer {
     }
     shape.closePath();
     const geom = new THREE.ShapeGeometry(shape);
-    const mat = new THREE.MeshBasicMaterial({
-      color,
-      side: THREE.DoubleSide,
-    });
+    const mat = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
     return new THREE.Mesh(geom, mat);
   }
 
-  /**
-   * Attach this character's meshes to a parent group.
-   * @param {THREE.Group} parent
-   */
+  /** @param {THREE.Group} parent */
   attachTo(parent) {
     parent.add(this.group);
     for (const ai of this._afterimages) {
@@ -183,10 +148,7 @@ export class CharacterRenderer {
     }
   }
 
-  /**
-   * Detach from parent group.
-   * @param {THREE.Group} parent
-   */
+  /** @param {THREE.Group} parent */
   detachFrom(parent) {
     parent.remove(this.group);
     for (const ai of this._afterimages) {
@@ -206,47 +168,38 @@ export class CharacterRenderer {
     const dt = time - this._lastTime;
     this._lastTime = time;
 
-    // --- Position ---
     this.group.position.set(
       character.x + character.width / 2,
       character.y + character.height / 2,
       5,
     );
 
-    // --- Squash/Stretch ---
     const sx = character.scaleX || 1;
     const sy = character.scaleY || 1;
     this.group.scale.set(sx, sy, 1);
 
-    // --- Determine expression and pose ---
     const expression = this._resolveExpression(character, power);
     const pose = this._expressionToPose(expression);
-    const texKey = pose;
 
-    // --- Swap sprite texture if pose changed ---
     if (pose !== this._currentPose) {
       this._currentPose = pose;
-      this._spriteMat.map = this._textures[texKey] || null;
+      this._spriteMat.map = this._textures[pose] || null;
       this._spriteMat.needsUpdate = true;
-      // Reset animation frame
       this._frameIndex = 0;
       this._frameTimer = 0;
     }
 
-    // --- Frame animation ---
     const frameDuration = pose === 'idle' ? IDLE_FRAME_DURATION : ACTION_FRAME_DURATION;
     this._frameTimer += dt;
     if (this._frameTimer >= frameDuration) {
       this._frameTimer -= frameDuration;
       this._frameIndex = (this._frameIndex + 1) % FRAME_COUNT;
     }
-    // Update UV offset to show current frame
-    const tex = this._textures[texKey];
+    const tex = this._textures[pose];
     if (tex) {
-      tex.offset.x = this._frameIndex * 0.25;
+      tex.offset.x = this._frameIndex / FRAME_COUNT;
     }
 
-    // --- Death transform ---
     if (character.deathActive) {
       const deathT = character.deathTimer;
       this.group.rotation.z = deathT * 8;
@@ -258,10 +211,8 @@ export class CharacterRenderer {
       this._spriteMat.opacity = 1;
     }
 
-    // --- Update pupils / overlays ---
-    this._updateExpression(expression, character, time);
+    this._updateExpression(expression);
 
-    // --- Charge shake ---
     if (expression === 'charge-high') {
       this._spriteMesh.position.x = (Math.random() - 0.5) * 3;
       this._spriteMesh.position.y = (Math.random() - 0.5) * 3;
@@ -270,16 +221,10 @@ export class CharacterRenderer {
       this._spriteMesh.position.y = 0;
     }
 
-    // --- Blink ---
     this._updateBlink(character, expression);
-
-    // --- Afterimage trail ---
-    this._updateAfterimages(character, texKey);
+    this._updateAfterimages(character, pose);
   }
 
-  /**
-   * Resolve expression string from character state.
-   */
   _resolveExpression(character, power) {
     if (character.deathActive) return 'death';
     if (character.victoryActive) return 'victory';
@@ -301,7 +246,6 @@ export class CharacterRenderer {
     }
   }
 
-  /** Map expression to sprite sheet pose name. */
   _expressionToPose(expression) {
     switch (expression) {
       case 'charge-low':
@@ -324,82 +268,20 @@ export class CharacterRenderer {
     }
   }
 
-  /**
-   * Update pupil positions, death/victory overlays based on expression.
-   */
-  _updateExpression(expression, character, _time) {
-    const needsUpdate = expression !== this._currentExpression || expression === 'idle';
-    if (!needsUpdate && expression !== 'charge-high') return;
+  _updateExpression(expression) {
+    if (expression === this._currentExpression) return;
     this._currentExpression = expression;
 
-    // Reset overlays
     for (const xg of this._deathEyeGroups) xg.visible = false;
     for (const sg of this._starEyeGroups) sg.visible = false;
 
-    let pupilOffX = 0;
-    let pupilOffY = 0;
-    let pupilScale = 1;
-    let showPupils = true;
-
-    switch (expression) {
-      case 'death':
-        showPupils = false;
-        for (const xg of this._deathEyeGroups) xg.visible = true;
-        break;
-      case 'victory':
-        showPupils = false;
-        for (const sg of this._starEyeGroups) sg.visible = true;
-        break;
-      case 'idle':
-        pupilOffX = (character.pupilDriftX || 0) * 0.3;
-        pupilOffY = (character.pupilDriftY || 0) * 0.3;
-        break;
-      case 'charge-low':
-        pupilScale = 0.8;
-        break;
-      case 'charge-mid':
-        pupilScale = 0.6;
-        break;
-      case 'charge-high':
-        pupilScale = 0.4;
-        pupilOffX = (Math.random() - 0.5) * 1.2;
-        pupilOffY = (Math.random() - 0.5) * 1.2;
-        break;
-      case 'rising':
-        pupilOffY = -0.5;
-        break;
-      case 'peak':
-        pupilOffY = 0.6;
-        break;
-      case 'falling':
-        pupilScale = 0.7;
-        pupilOffY = 0.5;
-        break;
-      case 'sliding':
-        pupilOffX = character._slideVx > 0 ? 0.6 : character._slideVx < 0 ? -0.6 : 0;
-        break;
-      case 'landing':
-        pupilScale = 0.8;
-        break;
-      default:
-        break;
-    }
-
-    for (const pupil of this._pupils) {
-      pupil.mesh.visible = showPupils;
-      if (showPupils) {
-        pupil.mesh.position.x = pupil.side * EYE_OFFSET_X + pupilOffX;
-        pupil.mesh.position.y = EYE_OFFSET_Y + pupilOffY;
-        pupil.mesh.scale.setScalar(pupilScale);
-      }
+    if (expression === 'death') {
+      for (const xg of this._deathEyeGroups) xg.visible = true;
+    } else if (expression === 'victory') {
+      for (const sg of this._starEyeGroups) sg.visible = true;
     }
   }
 
-  /**
-   * Eye blink — hide pupils briefly.
-   * The sprite sheet frame 3 already has closed eyes, so we just need
-   * to force frame 3 and hide pupils during blink.
-   */
   _updateBlink(character, expression) {
     if (
       character.blinkPhase > 0 &&
@@ -407,28 +289,15 @@ export class CharacterRenderer {
       !character.victoryActive &&
       (expression === 'idle' || expression === 'sliding')
     ) {
-      // Force the blink frame (frame index 2 = third frame with closed eyes)
-      this._frameIndex = 2;
-      const texKey = this._currentPose;
-      const tex = this._textures[texKey];
-      if (tex) tex.offset.x = 2 * 0.25;
-
-      // Hide pupils during blink
-      const halfDur = 0.075;
-      const bp = character.blinkPhase;
-      const blinkScale = bp > halfDur ? (bp - halfDur) / halfDur : 1 - bp / halfDur;
-      for (const pupil of this._pupils) {
-        pupil.mesh.visible = blinkScale > 0.3;
-      }
+      this._frameIndex = BLINK_FRAME_INDEX;
+      const tex = this._textures[this._currentPose];
+      if (tex) tex.offset.x = BLINK_FRAME_INDEX / FRAME_COUNT;
     }
   }
 
-  /**
-   * Update afterimage trail meshes using sprite texture.
-   */
-  _updateAfterimages(character, texKey) {
+  _updateAfterimages(character, pose) {
     const positions = character.afterimagePositions || [];
-    const tex = this._textures[texKey];
+    const tex = this._textures[pose];
 
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
       const ai = this._afterimages[i];
@@ -441,35 +310,27 @@ export class CharacterRenderer {
           4 - i * 0.5,
         );
         ai.mesh.scale.set(img.scaleX || 1, img.scaleY || 1, 1);
-        // Use current sprite texture for afterimages
         if (tex && ai.mat.map !== tex) {
           ai.mat.map = tex;
           ai.mat.needsUpdate = true;
         }
         ai.mat.opacity = img.opacity * 0.35;
-      } else {
+      } else if (ai.mesh.visible) {
         ai.mesh.visible = false;
         ai.mat.opacity = 0;
       }
     }
   }
 
-  /**
-   * Dispose all GPU resources.
-   */
   dispose() {
-    // Dispose textures
     for (const key of Object.keys(this._textures)) {
       this._textures[key].dispose();
     }
     this._textures = {};
 
-    // Dispose shared geometries once (used by multiple meshes)
-    if (this._pupilGeom) this._pupilGeom.dispose();
     if (this._afterGeom) this._afterGeom.dispose();
 
-    // Dispose meshes in group, skipping shared geometries
-    const shared = new Set([this._pupilGeom, this._afterGeom].filter(Boolean));
+    const shared = new Set([this._afterGeom].filter(Boolean));
     this.group.traverse((obj) => {
       if (obj.geometry && !shared.has(obj.geometry)) obj.geometry.dispose();
       if (obj.material) {
