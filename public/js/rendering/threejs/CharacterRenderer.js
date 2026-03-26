@@ -27,9 +27,9 @@ const SPRITE_W = 64;
 const SPRITE_H = 64;
 
 // Pupil positioning relative to sprite center (tuned to sprite eye locations)
-const EYE_OFFSET_X = 6; // distance from center to each eye
-const EYE_OFFSET_Y = -2; // eyes slightly above center (negative = up in y-down camera)
-const PUPIL_RADIUS = 2.5;
+const EYE_OFFSET_X = 9; // distance from center to each eye
+const EYE_OFFSET_Y = -9; // eyes above center (negative = up in y-down camera)
+const PUPIL_RADIUS = 3.5;
 const PUPIL_Z = 1; // in front of sprite
 
 /** Pose names that map to sprite sheet files. */
