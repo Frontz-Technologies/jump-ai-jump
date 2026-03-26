@@ -12,15 +12,20 @@ const ASSET_BASE = '/assets/character/';
 const STAR_EYE_COLOR = 0xffd700;
 const AFTERIMAGE_COUNT = 4;
 
-// Animation: 4 frames per sheet, cycle rate in seconds
 const FRAME_COUNT = 4;
 const IDLE_FRAME_DURATION = 0.5;
 const ACTION_FRAME_DURATION = 0.12;
+const BLINK_FRAME_INDEX = 2;
 
 // Sprite quad size in world units — larger than entity hitbox (40×40)
 // because the sprite frame (128×128) has padding around the character
 const SPRITE_W = 64;
 const SPRITE_H = 64;
+
+// Eye overlay positions (death X-eyes, victory star-eyes)
+const EYE_OVERLAY_X = 9;
+const EYE_OVERLAY_Y = -9;
+const EYE_OVERLAY_Z = 2;
 
 /** Pose names that map to sprite sheet files. */
 const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
@@ -30,12 +35,10 @@ export class CharacterRenderer {
     /** @type {THREE.Group} */
     this.group = new THREE.Group();
 
-    // --- Sprite textures (loaded async) ---
-    this._textures = {}; // { 'idle': tex, 'charging': tex, ... }
+    this._textures = {};
     this._texturesReady = false;
     this._loadTextures();
 
-    // --- Main sprite quad ---
     const geom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     this._spriteMat = new THREE.MeshBasicMaterial({
       transparent: true,
@@ -45,11 +48,10 @@ export class CharacterRenderer {
     this._spriteMesh = new THREE.Mesh(geom, this._spriteMat);
     this.group.add(this._spriteMesh);
 
-    // --- Death X-eyes overlay ---
     this._deathEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const xGroup = new THREE.Group();
-      xGroup.position.set(side * 9, -9, 2);
+      xGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
       const xMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
       for (let r = 0; r < 2; r++) {
         const bar = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.5), xMat);
@@ -61,11 +63,10 @@ export class CharacterRenderer {
       this._deathEyeGroups.push(xGroup);
     }
 
-    // --- Victory star-eyes overlay ---
     this._starEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const starGroup = new THREE.Group();
-      starGroup.position.set(side * 9, -9, 2);
+      starGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
       const starMesh = this._createStarMesh(4, STAR_EYE_COLOR);
       starGroup.add(starMesh);
       starGroup.visible = false;
@@ -73,7 +74,6 @@ export class CharacterRenderer {
       this._starEyeGroups.push(starGroup);
     }
 
-    // --- Afterimage trail ---
     this._afterimages = [];
     this._afterGeom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
@@ -88,7 +88,6 @@ export class CharacterRenderer {
       this._afterimages.push({ mesh, mat });
     }
 
-    // Track state
     this._currentPose = '';
     this._currentExpression = '';
     this._frameIndex = 0;
@@ -96,7 +95,6 @@ export class CharacterRenderer {
     this._lastTime = 0;
   }
 
-  /** Load all sprite sheet textures. */
   _loadTextures() {
     const loader = new THREE.TextureLoader();
     let pending = POSES.length;
@@ -118,14 +116,12 @@ export class CharacterRenderer {
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
       tex.colorSpace = THREE.SRGBColorSpace;
-      // Show one frame (1/4 width). Flip Y for y-down camera.
-      tex.repeat.set(0.25, -1);
+      tex.repeat.set(1 / FRAME_COUNT, -1);
       tex.offset.set(0, 1);
       this._textures[pose] = tex;
     }
   }
 
-  /** Create a 5-pointed star mesh for victory eyes. */
   _createStarMesh(radius, color) {
     const shape = new THREE.Shape();
     const points = 5;
@@ -140,17 +136,11 @@ export class CharacterRenderer {
     }
     shape.closePath();
     const geom = new THREE.ShapeGeometry(shape);
-    const mat = new THREE.MeshBasicMaterial({
-      color,
-      side: THREE.DoubleSide,
-    });
+    const mat = new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide });
     return new THREE.Mesh(geom, mat);
   }
 
-  /**
-   * Attach this character's meshes to a parent group.
-   * @param {THREE.Group} parent
-   */
+  /** @param {THREE.Group} parent */
   attachTo(parent) {
     parent.add(this.group);
     for (const ai of this._afterimages) {
@@ -158,10 +148,7 @@ export class CharacterRenderer {
     }
   }
 
-  /**
-   * Detach from parent group.
-   * @param {THREE.Group} parent
-   */
+  /** @param {THREE.Group} parent */
   detachFrom(parent) {
     parent.remove(this.group);
     for (const ai of this._afterimages) {
@@ -181,47 +168,38 @@ export class CharacterRenderer {
     const dt = time - this._lastTime;
     this._lastTime = time;
 
-    // --- Position ---
     this.group.position.set(
       character.x + character.width / 2,
       character.y + character.height / 2,
       5,
     );
 
-    // --- Squash/Stretch ---
     const sx = character.scaleX || 1;
     const sy = character.scaleY || 1;
     this.group.scale.set(sx, sy, 1);
 
-    // --- Determine expression and pose ---
     const expression = this._resolveExpression(character, power);
     const pose = this._expressionToPose(expression);
-    const texKey = pose;
 
-    // --- Swap sprite texture if pose changed ---
     if (pose !== this._currentPose) {
       this._currentPose = pose;
-      this._spriteMat.map = this._textures[texKey] || null;
+      this._spriteMat.map = this._textures[pose] || null;
       this._spriteMat.needsUpdate = true;
-      // Reset animation frame
       this._frameIndex = 0;
       this._frameTimer = 0;
     }
 
-    // --- Frame animation ---
     const frameDuration = pose === 'idle' ? IDLE_FRAME_DURATION : ACTION_FRAME_DURATION;
     this._frameTimer += dt;
     if (this._frameTimer >= frameDuration) {
       this._frameTimer -= frameDuration;
       this._frameIndex = (this._frameIndex + 1) % FRAME_COUNT;
     }
-    // Update UV offset to show current frame
-    const tex = this._textures[texKey];
+    const tex = this._textures[pose];
     if (tex) {
-      tex.offset.x = this._frameIndex * 0.25;
+      tex.offset.x = this._frameIndex / FRAME_COUNT;
     }
 
-    // --- Death transform ---
     if (character.deathActive) {
       const deathT = character.deathTimer;
       this.group.rotation.z = deathT * 8;
@@ -233,10 +211,8 @@ export class CharacterRenderer {
       this._spriteMat.opacity = 1;
     }
 
-    // --- Update pupils / overlays ---
     this._updateExpression(expression);
 
-    // --- Charge shake ---
     if (expression === 'charge-high') {
       this._spriteMesh.position.x = (Math.random() - 0.5) * 3;
       this._spriteMesh.position.y = (Math.random() - 0.5) * 3;
@@ -245,16 +221,10 @@ export class CharacterRenderer {
       this._spriteMesh.position.y = 0;
     }
 
-    // --- Blink ---
     this._updateBlink(character, expression);
-
-    // --- Afterimage trail ---
-    this._updateAfterimages(character, texKey);
+    this._updateAfterimages(character, pose);
   }
 
-  /**
-   * Resolve expression string from character state.
-   */
   _resolveExpression(character, power) {
     if (character.deathActive) return 'death';
     if (character.victoryActive) return 'victory';
@@ -276,7 +246,6 @@ export class CharacterRenderer {
     }
   }
 
-  /** Map expression to sprite sheet pose name. */
   _expressionToPose(expression) {
     switch (expression) {
       case 'charge-low':
@@ -299,9 +268,6 @@ export class CharacterRenderer {
     }
   }
 
-  /**
-   * Update death/victory overlays based on expression.
-   */
   _updateExpression(expression) {
     if (expression === this._currentExpression) return;
     this._currentExpression = expression;
@@ -316,9 +282,6 @@ export class CharacterRenderer {
     }
   }
 
-  /**
-   * Eye blink — force the closed-eyes frame from the sprite sheet.
-   */
   _updateBlink(character, expression) {
     if (
       character.blinkPhase > 0 &&
@@ -326,18 +289,15 @@ export class CharacterRenderer {
       !character.victoryActive &&
       (expression === 'idle' || expression === 'sliding')
     ) {
-      this._frameIndex = 2;
+      this._frameIndex = BLINK_FRAME_INDEX;
       const tex = this._textures[this._currentPose];
-      if (tex) tex.offset.x = 2 * 0.25;
+      if (tex) tex.offset.x = BLINK_FRAME_INDEX / FRAME_COUNT;
     }
   }
 
-  /**
-   * Update afterimage trail meshes using sprite texture.
-   */
-  _updateAfterimages(character, texKey) {
+  _updateAfterimages(character, pose) {
     const positions = character.afterimagePositions || [];
-    const tex = this._textures[texKey];
+    const tex = this._textures[pose];
 
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
       const ai = this._afterimages[i];
@@ -350,33 +310,26 @@ export class CharacterRenderer {
           4 - i * 0.5,
         );
         ai.mesh.scale.set(img.scaleX || 1, img.scaleY || 1, 1);
-        // Use current sprite texture for afterimages
         if (tex && ai.mat.map !== tex) {
           ai.mat.map = tex;
           ai.mat.needsUpdate = true;
         }
         ai.mat.opacity = img.opacity * 0.35;
-      } else {
+      } else if (ai.mesh.visible) {
         ai.mesh.visible = false;
         ai.mat.opacity = 0;
       }
     }
   }
 
-  /**
-   * Dispose all GPU resources.
-   */
   dispose() {
-    // Dispose textures
     for (const key of Object.keys(this._textures)) {
       this._textures[key].dispose();
     }
     this._textures = {};
 
-    // Dispose shared geometries once (used by multiple meshes)
     if (this._afterGeom) this._afterGeom.dispose();
 
-    // Dispose meshes in group, skipping shared geometries
     const shared = new Set([this._afterGeom].filter(Boolean));
     this.group.traverse((obj) => {
       if (obj.geometry && !shared.has(obj.geometry)) obj.geometry.dispose();
