@@ -22,6 +22,7 @@ const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 
 const app = express();
+app.set('trust proxy', 1); // Trust first proxy (Render reverse proxy)
 const PORT = process.env.PORT || 3000;
 const server = http.createServer(app);
 const GALAXY_ROTATION_HOURS = parseFloat(process.env.GALAXY_ROTATION_HOURS) || 24;
