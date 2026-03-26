@@ -27,9 +27,12 @@ const SPRITE_H = 64;
 const ANCHOR_Y = 124 / 128;
 
 // Eye overlay positions (death X-eyes, victory star-eyes)
+// Eye overlay offset from sprite center (not group origin)
 const EYE_OVERLAY_X = 9;
 const EYE_OVERLAY_Y = -9;
 const EYE_OVERLAY_Z = 2;
+// Sprite mesh offset in group (feet at origin)
+const SPRITE_OFFSET_Y = -(ANCHOR_Y - 0.5) * SPRITE_H;
 
 /** Pose names that map to sprite sheet files. */
 const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
@@ -50,12 +53,13 @@ export class CharacterRenderer {
       side: THREE.DoubleSide,
     });
     this._spriteMesh = new THREE.Mesh(geom, this._spriteMat);
+    this._spriteMesh.position.y = SPRITE_OFFSET_Y;
     this.group.add(this._spriteMesh);
 
     this._deathEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const xGroup = new THREE.Group();
-      xGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
+      xGroup.position.set(side * EYE_OVERLAY_X, SPRITE_OFFSET_Y + EYE_OVERLAY_Y, EYE_OVERLAY_Z);
       const xMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
       for (let r = 0; r < 2; r++) {
         const bar = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.5), xMat);
@@ -70,7 +74,7 @@ export class CharacterRenderer {
     this._starEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const starGroup = new THREE.Group();
-      starGroup.position.set(side * EYE_OVERLAY_X, EYE_OVERLAY_Y, EYE_OVERLAY_Z);
+      starGroup.position.set(side * EYE_OVERLAY_X, SPRITE_OFFSET_Y + EYE_OVERLAY_Y, EYE_OVERLAY_Z);
       const starMesh = this._createStarMesh(4, STAR_EYE_COLOR);
       starGroup.add(starMesh);
       starGroup.visible = false;
@@ -172,15 +176,10 @@ export class CharacterRenderer {
     const dt = time - this._lastTime;
     this._lastTime = time;
 
-    // Position sprite so anchor point (feet) aligns with entity bottom.
-    // In y-down: entity bottom = character.y + character.height
-    const entityBottomY = character.y + character.height;
-    const spriteAnchorFromCenter = (ANCHOR_Y - 0.5) * SPRITE_H;
-    this.group.position.set(
-      character.x + character.width / 2,
-      entityBottomY - spriteAnchorFromCenter,
-      5,
-    );
+    // Position group at entity bottom (feet level).
+    // Sprite mesh is offset inside the group so feet = group origin.
+    // This way squash/stretch scales around the feet, not the sprite center.
+    this.group.position.set(character.x + character.width / 2, character.y + character.height, 5);
 
     const sx = character.scaleX || 1;
     const sy = character.scaleY || 1;
@@ -223,10 +222,10 @@ export class CharacterRenderer {
 
     if (expression === 'charge-high') {
       this._spriteMesh.position.x = (Math.random() - 0.5) * 3;
-      this._spriteMesh.position.y = (Math.random() - 0.5) * 3;
+      this._spriteMesh.position.y = SPRITE_OFFSET_Y + (Math.random() - 0.5) * 3;
     } else {
       this._spriteMesh.position.x = 0;
-      this._spriteMesh.position.y = 0;
+      this._spriteMesh.position.y = SPRITE_OFFSET_Y;
     }
 
     this._updateBlink(character, expression);
