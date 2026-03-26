@@ -22,6 +22,10 @@ const BLINK_FRAME_INDEX = 2;
 const SPRITE_W = 64;
 const SPRITE_H = 64;
 
+// Anchor point: where the character's feet are in the sprite (0=top, 1=bottom).
+// All sprites are normalized so feet sit at row 124/128.
+const ANCHOR_Y = 124 / 128;
+
 // Eye overlay positions (death X-eyes, victory star-eyes)
 const EYE_OVERLAY_X = 9;
 const EYE_OVERLAY_Y = -9;
@@ -168,17 +172,13 @@ export class CharacterRenderer {
     const dt = time - this._lastTime;
     this._lastTime = time;
 
-    // Align sprite feet with entity bottom.
-    // Feet are at row 124/128 of the sprite = 62/64 world units from sprite top.
-    // Feet offset from sprite center = 62 - 32 = 30.
-    // Entity feet offset from entity center = height/2 = 20.
-    // So shift sprite up by 30 - 20 = 10 (negative in y-down).
-    const feetInSprite = (124 / 128) * SPRITE_H - SPRITE_H / 2; // 30
-    const feetInEntity = character.height / 2; // 20
-    const spriteOffsetY = -(feetInSprite - feetInEntity);
+    // Position sprite so anchor point (feet) aligns with entity bottom.
+    // In y-down: entity bottom = character.y + character.height
+    const entityBottomY = character.y + character.height;
+    const spriteAnchorFromCenter = (ANCHOR_Y - 0.5) * SPRITE_H;
     this.group.position.set(
       character.x + character.width / 2,
-      character.y + character.height / 2 + spriteOffsetY,
+      entityBottomY - spriteAnchorFromCenter,
       5,
     );
 
