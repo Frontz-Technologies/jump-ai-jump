@@ -27,7 +27,7 @@ const SPRITE_H = 48;
 
 // Pupil positioning relative to sprite center (tuned to sprite eye locations)
 const EYE_OFFSET_X = 6; // distance from center to each eye
-const EYE_OFFSET_Y = 2; // eyes slightly above center
+const EYE_OFFSET_Y = -2; // eyes slightly above center (negative = up in y-down camera)
 const PUPIL_RADIUS = 2.5;
 const PUPIL_Z = 1; // in front of sprite
 
@@ -144,9 +144,9 @@ export class CharacterRenderer {
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
       tex.colorSpace = THREE.SRGBColorSpace;
-      // Show only first frame by default
-      tex.repeat.set(0.25, 1);
-      tex.offset.set(0, 0);
+      // Show one frame (1/4 width). Flip Y for y-down camera.
+      tex.repeat.set(0.25, -1);
+      tex.offset.set(0, 1);
       this._textures[pose] = tex;
 
       // Helmet variant
@@ -155,8 +155,8 @@ export class CharacterRenderer {
       helmetTex.magFilter = THREE.NearestFilter;
       helmetTex.minFilter = THREE.NearestFilter;
       helmetTex.colorSpace = THREE.SRGBColorSpace;
-      helmetTex.repeat.set(0.25, 1);
-      helmetTex.offset.set(0, 0);
+      helmetTex.repeat.set(0.25, -1);
+      helmetTex.offset.set(0, 1);
       this._textures[pose + '-helmet'] = helmetTex;
     }
   }
