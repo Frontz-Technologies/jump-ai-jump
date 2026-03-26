@@ -3,16 +3,12 @@ import * as THREE from 'three';
 /**
  * Sprite-based Three.js character renderer.
  * Loads pre-rendered sprite sheet textures for each pose and swaps them
- * based on game state. Pupils are rendered as separate quads on top of
- * the sprite for dynamic eye tracking. Helmet variants are separate
- * sprite sheets swapped per planet.
+ * based on game state. Eyes/pupils are baked into the sprite sheets.
  *
  * Sprite sheets: 512×128 (4 frames of 128×128), RGBA transparent PNG.
- * Blank white eyes — pupils drawn in realtime.
  */
 
 const ASSET_BASE = '/assets/character/';
-const PUPIL_COLOR = 0x2a2a2a;
 const STAR_EYE_COLOR = 0xffd700;
 const AFTERIMAGE_COUNT = 4;
 
@@ -25,12 +21,6 @@ const ACTION_FRAME_DURATION = 0.12;
 // because the sprite frame (128×128) has padding around the character
 const SPRITE_W = 64;
 const SPRITE_H = 64;
-
-// Pupil positioning relative to sprite center (tuned to sprite eye locations)
-const EYE_OFFSET_X = 9; // distance from center to each eye
-const EYE_OFFSET_Y = -9; // eyes above center (negative = up in y-down camera)
-const PUPIL_RADIUS = 4;
-const PUPIL_Z = 2; // in front of sprite
 
 /** Pose names that map to sprite sheet files. */
 const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
@@ -55,28 +45,12 @@ export class CharacterRenderer {
     this._spriteMesh = new THREE.Mesh(geom, this._spriteMat);
     this.group.add(this._spriteMesh);
 
-    // --- Pupil overlays (two small circles) ---
-    this._pupils = [];
-    this._pupilGeom = new THREE.CircleGeometry(PUPIL_RADIUS, 12);
-    for (let side = -1; side <= 1; side += 2) {
-      const mat = new THREE.MeshBasicMaterial({
-        color: PUPIL_COLOR,
-        side: THREE.DoubleSide,
-        depthTest: false,
-      });
-      const mesh = new THREE.Mesh(this._pupilGeom, mat);
-      mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
-      mesh.renderOrder = 10; // ensure pupils render on top of sprite
-      this.group.add(mesh);
-      this._pupils.push({ mesh, mat, side });
-    }
-
     // --- Death X-eyes overlay ---
     this._deathEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const xGroup = new THREE.Group();
-      xGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
-      const xMat = new THREE.MeshBasicMaterial({ color: PUPIL_COLOR });
+      xGroup.position.set(side * 9, -9, 2);
+      const xMat = new THREE.MeshBasicMaterial({ color: 0x2a2a2a });
       for (let r = 0; r < 2; r++) {
         const bar = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.5), xMat);
         bar.rotation.z = r === 0 ? Math.PI / 4 : -Math.PI / 4;
@@ -91,7 +65,7 @@ export class CharacterRenderer {
     this._starEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const starGroup = new THREE.Group();
-      starGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      starGroup.position.set(side * 9, -9, 2);
       const starMesh = this._createStarMesh(4, STAR_EYE_COLOR);
       starGroup.add(starMesh);
       starGroup.visible = false;
@@ -260,7 +234,7 @@ export class CharacterRenderer {
     }
 
     // --- Update pupils / overlays ---
-    this._updateExpression(expression, character, time);
+    this._updateExpression(expression);
 
     // --- Charge shake ---
     if (expression === 'charge-high') {
@@ -326,80 +300,24 @@ export class CharacterRenderer {
   }
 
   /**
-   * Update pupil positions, death/victory overlays based on expression.
+   * Update death/victory overlays based on expression.
    */
-  _updateExpression(expression, character, _time) {
-    const needsUpdate = expression !== this._currentExpression || expression === 'idle';
-    if (!needsUpdate && expression !== 'charge-high') return;
+  _updateExpression(expression) {
+    if (expression === this._currentExpression) return;
     this._currentExpression = expression;
 
-    // Reset overlays
     for (const xg of this._deathEyeGroups) xg.visible = false;
     for (const sg of this._starEyeGroups) sg.visible = false;
 
-    let pupilOffX = 0;
-    let pupilOffY = 0;
-    let pupilScale = 1;
-    let showPupils = true;
-
-    switch (expression) {
-      case 'death':
-        showPupils = false;
-        for (const xg of this._deathEyeGroups) xg.visible = true;
-        break;
-      case 'victory':
-        showPupils = false;
-        for (const sg of this._starEyeGroups) sg.visible = true;
-        break;
-      case 'idle':
-        pupilOffX = (character.pupilDriftX || 0) * 0.3;
-        pupilOffY = (character.pupilDriftY || 0) * 0.3;
-        break;
-      case 'charge-low':
-        pupilScale = 0.8;
-        break;
-      case 'charge-mid':
-        pupilScale = 0.6;
-        break;
-      case 'charge-high':
-        pupilScale = 0.4;
-        pupilOffX = (Math.random() - 0.5) * 1.2;
-        pupilOffY = (Math.random() - 0.5) * 1.2;
-        break;
-      case 'rising':
-        pupilOffY = -0.5;
-        break;
-      case 'peak':
-        pupilOffY = 0.6;
-        break;
-      case 'falling':
-        pupilScale = 0.7;
-        pupilOffY = 0.5;
-        break;
-      case 'sliding':
-        pupilOffX = character._slideVx > 0 ? 0.6 : character._slideVx < 0 ? -0.6 : 0;
-        break;
-      case 'landing':
-        pupilScale = 0.8;
-        break;
-      default:
-        break;
-    }
-
-    for (const pupil of this._pupils) {
-      pupil.mesh.visible = showPupils;
-      if (showPupils) {
-        pupil.mesh.position.x = pupil.side * EYE_OFFSET_X + pupilOffX;
-        pupil.mesh.position.y = EYE_OFFSET_Y + pupilOffY;
-        pupil.mesh.scale.setScalar(pupilScale);
-      }
+    if (expression === 'death') {
+      for (const xg of this._deathEyeGroups) xg.visible = true;
+    } else if (expression === 'victory') {
+      for (const sg of this._starEyeGroups) sg.visible = true;
     }
   }
 
   /**
-   * Eye blink — hide pupils briefly.
-   * The sprite sheet frame 3 already has closed eyes, so we just need
-   * to force frame 3 and hide pupils during blink.
+   * Eye blink — force the closed-eyes frame from the sprite sheet.
    */
   _updateBlink(character, expression) {
     if (
@@ -408,19 +326,9 @@ export class CharacterRenderer {
       !character.victoryActive &&
       (expression === 'idle' || expression === 'sliding')
     ) {
-      // Force the blink frame (frame index 2 = third frame with closed eyes)
       this._frameIndex = 2;
-      const texKey = this._currentPose;
-      const tex = this._textures[texKey];
+      const tex = this._textures[this._currentPose];
       if (tex) tex.offset.x = 2 * 0.25;
-
-      // Hide pupils during blink
-      const halfDur = 0.075;
-      const bp = character.blinkPhase;
-      const blinkScale = bp > halfDur ? (bp - halfDur) / halfDur : 1 - bp / halfDur;
-      for (const pupil of this._pupils) {
-        pupil.mesh.visible = blinkScale > 0.3;
-      }
     }
   }
 
@@ -466,11 +374,10 @@ export class CharacterRenderer {
     this._textures = {};
 
     // Dispose shared geometries once (used by multiple meshes)
-    if (this._pupilGeom) this._pupilGeom.dispose();
     if (this._afterGeom) this._afterGeom.dispose();
 
     // Dispose meshes in group, skipping shared geometries
-    const shared = new Set([this._pupilGeom, this._afterGeom].filter(Boolean));
+    const shared = new Set([this._afterGeom].filter(Boolean));
     this.group.traverse((obj) => {
       if (obj.geometry && !shared.has(obj.geometry)) obj.geometry.dispose();
       if (obj.material) {
