@@ -197,7 +197,7 @@ export class CharacterRenderer {
   /**
    * Update character position, pose, expression, and effects.
    * @param {object} character - Character entity
-   * @param {object} options - { planetIndex, power, time }
+   * @param {object} options - { power, time }
    */
   update(character, options = {}) {
     if (!character || !this._texturesReady) return;
