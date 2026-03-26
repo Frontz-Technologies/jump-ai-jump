@@ -21,9 +21,10 @@ const FRAME_COUNT = 4;
 const IDLE_FRAME_DURATION = 0.25;
 const ACTION_FRAME_DURATION = 0.12;
 
-// Sprite quad size in world units (matches old 40×40 body roughly)
-const SPRITE_W = 48;
-const SPRITE_H = 48;
+// Sprite quad size in world units — larger than entity hitbox (40×40)
+// because the sprite frame (128×128) has padding around the character
+const SPRITE_W = 64;
+const SPRITE_H = 64;
 
 // Pupil positioning relative to sprite center (tuned to sprite eye locations)
 const EYE_OFFSET_X = 6; // distance from center to each eye
