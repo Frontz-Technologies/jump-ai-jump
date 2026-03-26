@@ -56,14 +56,14 @@ export class CharacterRenderer {
 
     // --- Pupil overlays (two small circles) ---
     this._pupils = [];
-    const pupilGeom = new THREE.CircleGeometry(PUPIL_RADIUS, 12);
+    this._pupilGeom = new THREE.CircleGeometry(PUPIL_RADIUS, 12);
     for (let side = -1; side <= 1; side += 2) {
       const mat = new THREE.MeshBasicMaterial({
         color: PUPIL_COLOR,
         transparent: true,
         depthWrite: false,
       });
-      const mesh = new THREE.Mesh(pupilGeom, mat);
+      const mesh = new THREE.Mesh(this._pupilGeom, mat);
       mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
       this.group.add(mesh);
       this._pupils.push({ mesh, mat, side });
@@ -477,9 +477,14 @@ export class CharacterRenderer {
     }
     this._textures = {};
 
-    // Dispose meshes in group
+    // Dispose shared geometries once (used by multiple meshes)
+    if (this._pupilGeom) this._pupilGeom.dispose();
+    if (this._afterGeom) this._afterGeom.dispose();
+
+    // Dispose meshes in group, skipping shared geometries
+    const shared = new Set([this._pupilGeom, this._afterGeom].filter(Boolean));
     this.group.traverse((obj) => {
-      if (obj.geometry) obj.geometry.dispose();
+      if (obj.geometry && !shared.has(obj.geometry)) obj.geometry.dispose();
       if (obj.material) {
         if (Array.isArray(obj.material)) {
           obj.material.forEach((m) => m.dispose());
@@ -488,9 +493,6 @@ export class CharacterRenderer {
         }
       }
     });
-
-    // Dispose shared afterimage geometry once, then materials
-    if (this._afterGeom) this._afterGeom.dispose();
     for (const ai of this._afterimages) {
       if (ai.mat.map) ai.mat.map = null;
       ai.mat.dispose();
