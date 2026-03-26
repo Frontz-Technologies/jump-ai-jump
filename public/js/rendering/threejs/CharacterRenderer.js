@@ -18,7 +18,7 @@ const AFTERIMAGE_COUNT = 4;
 
 // Animation: 4 frames per sheet, cycle rate in seconds
 const FRAME_COUNT = 4;
-const IDLE_FRAME_DURATION = 0.25;
+const IDLE_FRAME_DURATION = 0.5;
 const ACTION_FRAME_DURATION = 0.12;
 
 // Sprite quad size in world units — larger than entity hitbox (40×40)
@@ -41,7 +41,7 @@ export class CharacterRenderer {
     this.group = new THREE.Group();
 
     // --- Sprite textures (loaded async) ---
-    this._textures = {}; // { 'idle': tex, 'idle-helmet': tex, ... }
+    this._textures = {}; // { 'idle': tex, 'charging': tex, ... }
     this._texturesReady = false;
     this._loadTextures();
 
@@ -116,7 +116,6 @@ export class CharacterRenderer {
     // Track state
     this._currentPose = '';
     this._currentExpression = '';
-    this._currentHelmet = false;
     this._frameIndex = 0;
     this._frameTimer = 0;
     this._lastTime = 0;
@@ -125,7 +124,7 @@ export class CharacterRenderer {
   /** Load all sprite sheet textures. */
   _loadTextures() {
     const loader = new THREE.TextureLoader();
-    let pending = POSES.length * 2;
+    let pending = POSES.length;
 
     const onComplete = () => {
       pending--;
@@ -138,7 +137,6 @@ export class CharacterRenderer {
     };
 
     for (const pose of POSES) {
-      // No helmet
       const tex = loader.load(ASSET_BASE + pose + '.png', onComplete, undefined, () =>
         onError(ASSET_BASE + pose + '.png'),
       );
@@ -149,16 +147,6 @@ export class CharacterRenderer {
       tex.repeat.set(0.25, -1);
       tex.offset.set(0, 1);
       this._textures[pose] = tex;
-
-      // Helmet variant
-      const helmetUrl = ASSET_BASE + pose + '-helmet.png';
-      const helmetTex = loader.load(helmetUrl, onComplete, undefined, () => onError(helmetUrl));
-      helmetTex.magFilter = THREE.NearestFilter;
-      helmetTex.minFilter = THREE.NearestFilter;
-      helmetTex.colorSpace = THREE.SRGBColorSpace;
-      helmetTex.repeat.set(0.25, -1);
-      helmetTex.offset.set(0, 1);
-      this._textures[pose + '-helmet'] = helmetTex;
     }
   }
 
@@ -209,12 +197,12 @@ export class CharacterRenderer {
   /**
    * Update character position, pose, expression, and effects.
    * @param {object} character - Character entity
-   * @param {object} options - { planetIndex, power, time }
+   * @param {object} options - { power, time }
    */
   update(character, options = {}) {
     if (!character || !this._texturesReady) return;
 
-    const { planetIndex = 0, power = 0, time = 0 } = options;
+    const { power = 0, time = 0 } = options;
     const dt = time - this._lastTime;
     this._lastTime = time;
 
@@ -233,13 +221,11 @@ export class CharacterRenderer {
     // --- Determine expression and pose ---
     const expression = this._resolveExpression(character, power);
     const pose = this._expressionToPose(expression);
-    const useHelmet = planetIndex > 0;
+    const texKey = pose;
 
-    // --- Swap sprite texture if pose/helmet changed ---
-    const texKey = useHelmet ? pose + '-helmet' : pose;
-    if (pose !== this._currentPose || useHelmet !== this._currentHelmet) {
+    // --- Swap sprite texture if pose changed ---
+    if (pose !== this._currentPose) {
       this._currentPose = pose;
-      this._currentHelmet = useHelmet;
       this._spriteMat.map = this._textures[texKey] || null;
       this._spriteMat.needsUpdate = true;
       // Reset animation frame
@@ -423,7 +409,7 @@ export class CharacterRenderer {
     ) {
       // Force the blink frame (frame index 2 = third frame with closed eyes)
       this._frameIndex = 2;
-      const texKey = this._currentHelmet ? this._currentPose + '-helmet' : this._currentPose;
+      const texKey = this._currentPose;
       const tex = this._textures[texKey];
       if (tex) tex.offset.x = 2 * 0.25;
 

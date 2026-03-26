@@ -194,7 +194,6 @@ export class ThreeJSTheme extends ThemeBase {
 
     const time = performance.now() * 0.001 - this._startTime;
     this._characterRenderer.update(character, {
-      planetIndex: this._planetIndex,
       power: this._power,
       time,
     });
