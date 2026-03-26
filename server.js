@@ -286,9 +286,9 @@ app.post('/api/generate-difficulty', difficultyLimiter, async (req, res) => {
       // Clamp each platform's values
       for (const spec of config.platforms) {
         for (const key of Object.keys(PLATFORM_BOUNDS)) {
-          if (spec[key] != null) {
-            const [min, max] = PLATFORM_BOUNDS[key];
-            spec[key] = Math.max(min, Math.min(max, spec[key]));
+          const range = PLATFORM_BOUNDS[key];
+          if (spec[key] != null && Array.isArray(range)) {
+            spec[key] = Math.max(range[0], Math.min(range[1], spec[key]));
           }
         }
       }
