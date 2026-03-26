@@ -61,6 +61,8 @@ export class CharacterRenderer {
     for (let side = -1; side <= 1; side += 2) {
       const mat = new THREE.MeshBasicMaterial({
         color: PUPIL_COLOR,
+        side: THREE.DoubleSide,
+        depthTest: false,
       });
       const mesh = new THREE.Mesh(this._pupilGeom, mat);
       mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
