@@ -168,9 +168,14 @@ export class CharacterRenderer {
     const dt = time - this._lastTime;
     this._lastTime = time;
 
-    // Offset sprite down so character feet align with entity bottom.
-    // Sprite quad (64) is taller than entity (40); in y-down, positive = down.
-    const spriteOffsetY = (SPRITE_H - character.height) / 2;
+    // Align sprite feet with entity bottom.
+    // Feet are at row 124/128 of the sprite = 62/64 world units from sprite top.
+    // Feet offset from sprite center = 62 - 32 = 30.
+    // Entity feet offset from entity center = height/2 = 20.
+    // So shift sprite up by 30 - 20 = 10 (negative in y-down).
+    const feetInSprite = (124 / 128) * SPRITE_H - SPRITE_H / 2; // 30
+    const feetInEntity = character.height / 2; // 20
+    const spriteOffsetY = -(feetInSprite - feetInEntity);
     this.group.position.set(
       character.x + character.width / 2,
       character.y + character.height / 2 + spriteOffsetY,
