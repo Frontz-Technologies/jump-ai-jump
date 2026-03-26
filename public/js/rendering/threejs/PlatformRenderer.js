@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { PLANET_CONFIGS } from '../../data/PlanetConfig.js';
+import { PLANET_CONFIGS, PLATFORMS_PER_STAGE } from '../../data/PlanetConfig.js';
 
 const POOL_SIZE = 50;
 const TILE_SIZE = 128;
@@ -142,8 +142,7 @@ export class PlatformRenderer {
   sync(visiblePlatforms, planetIndex, personalBestIndex) {
     if (!this._texturesReady) return;
 
-    const surfaceType = this._getSurfaceForPlanet(planetIndex);
-    const material = this._surfaceMaterials[surfaceType];
+    const planets = PLANET_CONFIGS;
 
     // Hide all
     for (const g of this._pool) g.visible = false;
@@ -152,6 +151,12 @@ export class PlatformRenderer {
       const { platform: p, index } = visiblePlatforms[i];
       const group = this._pool[i];
       group.visible = true;
+
+      // Determine which planet this platform belongs to based on its index
+      const stage = Math.floor(index / PLATFORMS_PER_STAGE);
+      const platPlanetIndex = Math.min(stage, planets.length - 1);
+      const surfaceType = this._getSurfaceForPlanet(platPlanetIndex);
+      const material = this._surfaceMaterials[surfaceType];
 
       // Position
       group.position.set(p.x + p.width / 2, p.y + p.height / 2 + (p.animOffset || 0), 0);
