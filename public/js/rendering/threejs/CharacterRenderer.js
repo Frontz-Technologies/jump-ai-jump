@@ -99,14 +99,14 @@ export class CharacterRenderer {
 
     // --- Afterimage trail ---
     this._afterimages = [];
-    const afterGeom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
+    this._afterGeom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
       const mat = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
       });
-      const mesh = new THREE.Mesh(afterGeom, mat);
+      const mesh = new THREE.Mesh(this._afterGeom, mat);
       mesh.visible = false;
       mesh.renderOrder = -1;
       this._afterimages.push({ mesh, mat });
@@ -126,14 +126,21 @@ export class CharacterRenderer {
     const loader = new THREE.TextureLoader();
     let pending = POSES.length * 2;
 
-    const onLoad = () => {
+    const onComplete = () => {
       pending--;
       if (pending <= 0) this._texturesReady = true;
     };
 
+    const onError = (url) => {
+      console.warn(`[CharacterRenderer] Failed to load texture: ${url}`);
+      onComplete();
+    };
+
     for (const pose of POSES) {
       // No helmet
-      const tex = loader.load(ASSET_BASE + pose + '.png', onLoad);
+      const tex = loader.load(ASSET_BASE + pose + '.png', onComplete, undefined, () =>
+        onError(ASSET_BASE + pose + '.png'),
+      );
       tex.magFilter = THREE.NearestFilter;
       tex.minFilter = THREE.NearestFilter;
       tex.colorSpace = THREE.SRGBColorSpace;
@@ -143,7 +150,8 @@ export class CharacterRenderer {
       this._textures[pose] = tex;
 
       // Helmet variant
-      const helmetTex = loader.load(ASSET_BASE + pose + '-helmet.png', onLoad);
+      const helmetUrl = ASSET_BASE + pose + '-helmet.png';
+      const helmetTex = loader.load(helmetUrl, onComplete, undefined, () => onError(helmetUrl));
       helmetTex.magFilter = THREE.NearestFilter;
       helmetTex.minFilter = THREE.NearestFilter;
       helmetTex.colorSpace = THREE.SRGBColorSpace;
@@ -481,11 +489,11 @@ export class CharacterRenderer {
       }
     });
 
-    // Dispose afterimage materials
+    // Dispose shared afterimage geometry once, then materials
+    if (this._afterGeom) this._afterGeom.dispose();
     for (const ai of this._afterimages) {
       if (ai.mat.map) ai.mat.map = null;
       ai.mat.dispose();
-      ai.mesh.geometry.dispose();
     }
   }
 }
