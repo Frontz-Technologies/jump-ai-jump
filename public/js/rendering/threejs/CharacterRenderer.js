@@ -29,8 +29,8 @@ const SPRITE_H = 64;
 // Pupil positioning relative to sprite center (tuned to sprite eye locations)
 const EYE_OFFSET_X = 9; // distance from center to each eye
 const EYE_OFFSET_Y = -9; // eyes above center (negative = up in y-down camera)
-const PUPIL_RADIUS = 3.5;
-const PUPIL_Z = 1; // in front of sprite
+const PUPIL_RADIUS = 4;
+const PUPIL_Z = 2; // in front of sprite
 
 /** Pose names that map to sprite sheet files. */
 const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
@@ -61,11 +61,10 @@ export class CharacterRenderer {
     for (let side = -1; side <= 1; side += 2) {
       const mat = new THREE.MeshBasicMaterial({
         color: PUPIL_COLOR,
-        transparent: true,
-        depthWrite: false,
       });
       const mesh = new THREE.Mesh(this._pupilGeom, mat);
       mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      mesh.renderOrder = 10; // ensure pupils render on top of sprite
       this.group.add(mesh);
       this._pupils.push({ mesh, mat, side });
     }
