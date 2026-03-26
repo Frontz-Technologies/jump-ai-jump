@@ -1,145 +1,82 @@
 import * as THREE from 'three';
 
 /**
- * Procedural Three.js character renderer.
- * Builds the character from geometry primitives (boxes, spheres)
- * matching the 2D PlanetaryTheme look: coral-red body, white eyes
- * with black pupils, small legs, expressive face, and space helmet.
+ * Sprite-based Three.js character renderer.
+ * Loads pre-rendered sprite sheet textures for each pose and swaps them
+ * based on game state. Pupils are rendered as separate quads on top of
+ * the sprite for dynamic eye tracking. Helmet variants are separate
+ * sprite sheets swapped per planet.
+ *
+ * Sprite sheets: 512×128 (4 frames of 128×128), RGBA transparent PNG.
+ * Blank white eyes — pupils drawn in realtime.
  */
 
-const BODY_COLOR = 0xe85d4a;
-const BODY_STROKE_COLOR = 0xc94835;
-const EYE_COLOR = 0xffffff;
+const ASSET_BASE = '/assets/character/';
 const PUPIL_COLOR = 0x2a2a2a;
-const MOUTH_COLOR = 0xc94835;
-const LEG_COLOR = 0xe85d4a;
-const LEG_STROKE_COLOR = 0xc94835;
-const HELMET_COLOR = 0xffffff;
-const EYEBROW_COLOR = 0xc94835;
 const STAR_EYE_COLOR = 0xffd700;
-
 const AFTERIMAGE_COUNT = 4;
+
+// Animation: 4 frames per sheet, cycle rate in seconds
+const FRAME_COUNT = 4;
+const IDLE_FRAME_DURATION = 0.25;
+const ACTION_FRAME_DURATION = 0.12;
+
+// Sprite quad size in world units (matches old 40×40 body roughly)
+const SPRITE_W = 48;
+const SPRITE_H = 48;
+
+// Pupil positioning relative to sprite center (tuned to sprite eye locations)
+const EYE_OFFSET_X = 6; // distance from center to each eye
+const EYE_OFFSET_Y = 2; // eyes slightly above center
+const PUPIL_RADIUS = 2.5;
+const PUPIL_Z = 1; // in front of sprite
+
+/** Pose names that map to sprite sheet files. */
+const POSES = ['idle', 'charging', 'jumping', 'falling', 'landing'];
 
 export class CharacterRenderer {
   constructor() {
     /** @type {THREE.Group} */
     this.group = new THREE.Group();
 
-    // --- Body ---
-    const bodyGeom = this._makeRoundedBoxGeometry(40, 40, 20, 4);
-    this._bodyMat = new THREE.MeshStandardMaterial({ color: BODY_COLOR });
-    this._bodyMesh = new THREE.Mesh(bodyGeom, this._bodyMat);
-    this._bodyMesh.position.z = 0;
-    this.group.add(this._bodyMesh);
+    // --- Sprite textures (loaded async) ---
+    this._textures = {}; // { 'idle': tex, 'idle-helmet': tex, ... }
+    this._texturesReady = false;
+    this._loadTextures();
 
-    // Darker edge outline (slightly larger, behind)
-    const outlineGeom = this._makeRoundedBoxGeometry(43, 43, 18, 4);
-    this._outlineMat = new THREE.MeshStandardMaterial({
-      color: BODY_STROKE_COLOR,
-    });
-    this._outlineMesh = new THREE.Mesh(outlineGeom, this._outlineMat);
-    this._outlineMesh.position.z = -1;
-    this.group.add(this._outlineMesh);
-
-    // --- Legs ---
-    this._legs = [];
-    const legGeom = this._makeRoundedBoxGeometry(10, 8, 10, 2);
-    for (let side = -1; side <= 1; side += 2) {
-      const legMat = new THREE.MeshStandardMaterial({ color: LEG_COLOR });
-      const legMesh = new THREE.Mesh(legGeom, legMat);
-      const legOutlineGeom = this._makeRoundedBoxGeometry(12, 9, 9, 2);
-      const legOutlineMat = new THREE.MeshStandardMaterial({
-        color: LEG_STROKE_COLOR,
-      });
-      const legOutlineMesh = new THREE.Mesh(legOutlineGeom, legOutlineMat);
-      legOutlineMesh.position.z = -0.5;
-
-      const legGroup = new THREE.Group();
-      legGroup.add(legOutlineMesh);
-      legGroup.add(legMesh);
-      legGroup.position.x = side * 8;
-      legGroup.position.y = 22; // below body
-      legGroup.position.z = 0;
-      this.group.add(legGroup);
-      this._legs.push({ group: legGroup, mat: legMat, side });
-    }
-
-    // --- Eyes ---
-    this._eyeGroups = [];
-    for (let side = -1; side <= 1; side += 2) {
-      const eyeGroup = new THREE.Group();
-      eyeGroup.position.set(side * 8, -4, 11);
-
-      // Sclera (white sphere, slightly flattened)
-      const scleraGeom = new THREE.SphereGeometry(6, 16, 12);
-      const scleraMat = new THREE.MeshStandardMaterial({ color: EYE_COLOR });
-      const scleraMesh = new THREE.Mesh(scleraGeom, scleraMat);
-      scleraMesh.scale.set(1, 1, 0.5);
-      eyeGroup.add(scleraMesh);
-
-      // Pupil (small black sphere)
-      const pupilGeom = new THREE.SphereGeometry(2.5, 12, 8);
-      const pupilMat = new THREE.MeshStandardMaterial({ color: PUPIL_COLOR });
-      const pupilMesh = new THREE.Mesh(pupilGeom, pupilMat);
-      pupilMesh.position.z = 2.5;
-      eyeGroup.add(pupilMesh);
-
-      this.group.add(eyeGroup);
-      this._eyeGroups.push({
-        group: eyeGroup,
-        sclera: scleraMesh,
-        scleraMat,
-        pupil: pupilMesh,
-        pupilMat,
-        side,
-      });
-    }
-
-    // --- Mouth ---
-    this._mouthGroup = new THREE.Group();
-    this._mouthGroup.position.set(0, 8, 11);
-
-    // Smile (torus arc)
-    this._smileMesh = this._createSmileMesh();
-    this._mouthGroup.add(this._smileMesh);
-
-    // Scared mouth (open circle)
-    const scaredGeom = new THREE.RingGeometry(2.5, 4, 16);
-    this._scaredMat = new THREE.MeshStandardMaterial({
-      color: MOUTH_COLOR,
+    // --- Main sprite quad ---
+    const geom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
+    this._spriteMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      depthWrite: false,
       side: THREE.DoubleSide,
     });
-    this._scaredMesh = new THREE.Mesh(scaredGeom, this._scaredMat);
-    this._scaredMesh.visible = false;
-    this._mouthGroup.add(this._scaredMesh);
+    this._spriteMesh = new THREE.Mesh(geom, this._spriteMat);
+    this.group.add(this._spriteMesh);
 
-    // Determined mouth (flat line)
-    this._lineMouth = this._createLineMouth();
-    this._lineMouth.visible = false;
-    this._mouthGroup.add(this._lineMouth);
-
-    this.group.add(this._mouthGroup);
-
-    // --- Eyebrows (thin box meshes) ---
-    this._eyebrows = [];
+    // --- Pupil overlays (two small circles) ---
+    this._pupils = [];
+    const pupilGeom = new THREE.CircleGeometry(PUPIL_RADIUS, 12);
     for (let side = -1; side <= 1; side += 2) {
-      const browGeom = new THREE.BoxGeometry(7, 1.5, 1);
-      const browMat = new THREE.MeshStandardMaterial({ color: EYEBROW_COLOR });
-      const browMesh = new THREE.Mesh(browGeom, browMat);
-      browMesh.position.set(side * 8, -12, 11);
-      browMesh.visible = false;
-      this.group.add(browMesh);
-      this._eyebrows.push({ mesh: browMesh, mat: browMat, side });
+      const mat = new THREE.MeshBasicMaterial({
+        color: PUPIL_COLOR,
+        transparent: true,
+        depthWrite: false,
+      });
+      const mesh = new THREE.Mesh(pupilGeom, mat);
+      mesh.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      this.group.add(mesh);
+      this._pupils.push({ mesh, mat, side });
     }
 
     // --- Death X-eyes overlay ---
     this._deathEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const xGroup = new THREE.Group();
-      xGroup.position.set(side * 8, -4, 12);
-      const xMat = new THREE.MeshStandardMaterial({ color: PUPIL_COLOR });
+      xGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      const xMat = new THREE.MeshBasicMaterial({ color: PUPIL_COLOR });
       for (let r = 0; r < 2; r++) {
-        const bar = new THREE.Mesh(new THREE.BoxGeometry(8, 1.5, 1), xMat);
+        const bar = new THREE.Mesh(new THREE.PlaneGeometry(7, 1.5), xMat);
         bar.rotation.z = r === 0 ? Math.PI / 4 : -Math.PI / 4;
         xGroup.add(bar);
       }
@@ -152,116 +89,68 @@ export class CharacterRenderer {
     this._starEyeGroups = [];
     for (let side = -1; side <= 1; side += 2) {
       const starGroup = new THREE.Group();
-      starGroup.position.set(side * 8, -4, 12);
-      const starMesh = this._createStarMesh(5, STAR_EYE_COLOR);
+      starGroup.position.set(side * EYE_OFFSET_X, EYE_OFFSET_Y, PUPIL_Z);
+      const starMesh = this._createStarMesh(4, STAR_EYE_COLOR);
       starGroup.add(starMesh);
       starGroup.visible = false;
       this.group.add(starGroup);
       this._starEyeGroups.push(starGroup);
     }
 
-    // --- Helmet (semi-transparent dome) ---
-    this._helmetGroup = new THREE.Group();
-    const helmetGeom = new THREE.SphereGeometry(26, 24, 16, 0, Math.PI * 2, 0, Math.PI * 0.6);
-    this._helmetMat = new THREE.MeshStandardMaterial({
-      color: HELMET_COLOR,
-      transparent: true,
-      opacity: 0.2,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const helmetMesh = new THREE.Mesh(helmetGeom, this._helmetMat);
-    helmetMesh.rotation.x = Math.PI; // dome faces upward
-    helmetMesh.position.y = -5;
-    helmetMesh.position.z = 2;
-    this._helmetGroup.add(helmetMesh);
-
-    // Helmet rim (torus at the base)
-    const rimGeom = new THREE.TorusGeometry(22, 1.5, 8, 24);
-    const rimMat = new THREE.MeshStandardMaterial({ color: 0xaaaaaa });
-    const rimMesh = new THREE.Mesh(rimGeom, rimMat);
-    rimMesh.rotation.x = Math.PI / 2;
-    rimMesh.position.y = 5;
-    rimMesh.position.z = 2;
-    this._helmetGroup.add(rimMesh);
-
-    // Visor tint (subtle reflective strip)
-    const visorGeom = new THREE.SphereGeometry(
-      25,
-      24,
-      8,
-      -Math.PI * 0.4,
-      Math.PI * 0.8,
-      Math.PI * 0.25,
-      Math.PI * 0.25,
-    );
-    const visorMat = new THREE.MeshStandardMaterial({
-      color: 0x88ccff,
-      transparent: true,
-      opacity: 0.15,
-      side: THREE.DoubleSide,
-      depthWrite: false,
-    });
-    const visorMesh = new THREE.Mesh(visorGeom, visorMat);
-    visorMesh.rotation.x = Math.PI;
-    visorMesh.position.y = -5;
-    visorMesh.position.z = 2;
-    this._helmetGroup.add(visorMesh);
-
-    this._helmetGroup.visible = false;
-    this.group.add(this._helmetGroup);
-
     // --- Afterimage trail ---
     this._afterimages = [];
-    this._afterGeom = this._makeRoundedBoxGeometry(40, 40, 16, 4);
+    const afterGeom = new THREE.PlaneGeometry(SPRITE_W, SPRITE_H);
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
-      const mat = new THREE.MeshStandardMaterial({
-        color: BODY_COLOR,
+      const mat = new THREE.MeshBasicMaterial({
         transparent: true,
         opacity: 0,
         depthWrite: false,
       });
-      const mesh = new THREE.Mesh(this._afterGeom, mat);
+      const mesh = new THREE.Mesh(afterGeom, mat);
       mesh.visible = false;
       mesh.renderOrder = -1;
       this._afterimages.push({ mesh, mat });
     }
 
-    // Track current expression state to avoid redundant updates
+    // Track state
+    this._currentPose = '';
     this._currentExpression = '';
+    this._currentHelmet = false;
+    this._frameIndex = 0;
+    this._frameTimer = 0;
+    this._lastTime = 0;
   }
 
-  /**
-   * Create a rounded box geometry using beveled edges.
-   * Uses a standard BoxGeometry with slight bevel approximation.
-   */
-  _makeRoundedBoxGeometry(width, height, depth, _radius) {
-    // Three.js doesn't have a built-in rounded box, so we use a regular box
-    // and rely on the outline mesh for the visual rounding effect.
-    // For a more rounded look, we use a slightly higher-segment box.
-    return new THREE.BoxGeometry(width, height, depth, 2, 2, 2);
-  }
+  /** Load all sprite sheet textures. */
+  _loadTextures() {
+    const loader = new THREE.TextureLoader();
+    let pending = POSES.length * 2;
 
-  /** Create the smile arc mesh from a torus segment. */
-  _createSmileMesh() {
-    const curve = new THREE.EllipseCurve(0, 0, 5, 3, 0.15 * Math.PI, 0.85 * Math.PI, false);
-    const points = curve.getPoints(16);
-    const shape = new THREE.BufferGeometry().setFromPoints(
-      points.map((p) => new THREE.Vector3(p.x, -p.y, 0)),
-    );
-    const mat = new THREE.LineBasicMaterial({ color: MOUTH_COLOR, linewidth: 2 });
-    const line = new THREE.Line(shape, mat);
-    return line;
-  }
+    const onLoad = () => {
+      pending--;
+      if (pending <= 0) this._texturesReady = true;
+    };
 
-  /** Create a flat line mouth for determined/charging expression. */
-  _createLineMouth() {
-    const geom = new THREE.BufferGeometry().setFromPoints([
-      new THREE.Vector3(-4, 0, 0),
-      new THREE.Vector3(4, 0, 0),
-    ]);
-    const mat = new THREE.LineBasicMaterial({ color: MOUTH_COLOR, linewidth: 2 });
-    return new THREE.Line(geom, mat);
+    for (const pose of POSES) {
+      // No helmet
+      const tex = loader.load(ASSET_BASE + pose + '.png', onLoad);
+      tex.magFilter = THREE.NearestFilter;
+      tex.minFilter = THREE.NearestFilter;
+      tex.colorSpace = THREE.SRGBColorSpace;
+      // Show only first frame by default
+      tex.repeat.set(0.25, 1);
+      tex.offset.set(0, 0);
+      this._textures[pose] = tex;
+
+      // Helmet variant
+      const helmetTex = loader.load(ASSET_BASE + pose + '-helmet.png', onLoad);
+      helmetTex.magFilter = THREE.NearestFilter;
+      helmetTex.minFilter = THREE.NearestFilter;
+      helmetTex.colorSpace = THREE.SRGBColorSpace;
+      helmetTex.repeat.set(0.25, 1);
+      helmetTex.offset.set(0, 0);
+      this._textures[pose + '-helmet'] = helmetTex;
+    }
   }
 
   /** Create a 5-pointed star mesh for victory eyes. */
@@ -279,17 +168,15 @@ export class CharacterRenderer {
     }
     shape.closePath();
     const geom = new THREE.ShapeGeometry(shape);
-    const mat = new THREE.MeshStandardMaterial({
+    const mat = new THREE.MeshBasicMaterial({
       color,
-      emissive: color,
-      emissiveIntensity: 0.4,
       side: THREE.DoubleSide,
     });
     return new THREE.Mesh(geom, mat);
   }
 
   /**
-   * Attach this character's meshes to a parent group (e.g., worldLayer).
+   * Attach this character's meshes to a parent group.
    * @param {THREE.Group} parent
    */
   attachTo(parent) {
@@ -312,15 +199,15 @@ export class CharacterRenderer {
 
   /**
    * Update character position, pose, expression, and effects.
-   * Called every frame by ThreeJSTheme.updateFrame().
-   *
    * @param {object} character - Character entity
    * @param {object} options - { planetIndex, power, time }
    */
   update(character, options = {}) {
-    if (!character) return;
+    if (!character || !this._texturesReady) return;
 
     const { planetIndex = 0, power = 0, time = 0 } = options;
+    const dt = time - this._lastTime;
+    this._lastTime = time;
 
     // --- Position ---
     this.group.position.set(
@@ -334,44 +221,65 @@ export class CharacterRenderer {
     const sy = character.scaleY || 1;
     this.group.scale.set(sx, sy, 1);
 
-    // --- Determine expression state ---
+    // --- Determine expression and pose ---
     const expression = this._resolveExpression(character, power);
+    const pose = this._expressionToPose(expression);
+    const useHelmet = planetIndex > 0;
+
+    // --- Swap sprite texture if pose/helmet changed ---
+    const texKey = useHelmet ? pose + '-helmet' : pose;
+    if (pose !== this._currentPose || useHelmet !== this._currentHelmet) {
+      this._currentPose = pose;
+      this._currentHelmet = useHelmet;
+      this._spriteMat.map = this._textures[texKey] || null;
+      this._spriteMat.needsUpdate = true;
+      // Reset animation frame
+      this._frameIndex = 0;
+      this._frameTimer = 0;
+    }
+
+    // --- Frame animation ---
+    const frameDuration = pose === 'idle' ? IDLE_FRAME_DURATION : ACTION_FRAME_DURATION;
+    this._frameTimer += dt;
+    if (this._frameTimer >= frameDuration) {
+      this._frameTimer -= frameDuration;
+      this._frameIndex = (this._frameIndex + 1) % FRAME_COUNT;
+    }
+    // Update UV offset to show current frame
+    const tex = this._textures[texKey];
+    if (tex) {
+      tex.offset.x = this._frameIndex * 0.25;
+    }
 
     // --- Death transform ---
     if (character.deathActive) {
-      const dt = character.deathTimer;
-      this.group.rotation.z = dt * 8;
-      const deathScale = Math.max(0.1, 1 - dt * 0.8);
+      const deathT = character.deathTimer;
+      this.group.rotation.z = deathT * 8;
+      const deathScale = Math.max(0.1, 1 - deathT * 0.8);
       this.group.scale.multiplyScalar(deathScale);
-      // Fade body
-      this._bodyMat.transparent = true;
-      this._bodyMat.opacity = Math.max(0, 1 - dt * 0.7);
-      this._outlineMat.transparent = true;
-      this._outlineMat.opacity = Math.max(0, 1 - dt * 0.7);
+      this._spriteMat.opacity = Math.max(0, 1 - deathT * 0.7);
     } else {
       this.group.rotation.z = 0;
-      if (this._bodyMat.transparent) {
-        this._bodyMat.transparent = false;
-        this._bodyMat.opacity = 1;
-        this._outlineMat.transparent = false;
-        this._outlineMat.opacity = 1;
-      }
+      this._spriteMat.opacity = 1;
     }
 
-    // --- Update face/expression ---
+    // --- Update pupils / overlays ---
     this._updateExpression(expression, character, time);
 
-    // --- Legs animation ---
-    this._updateLegs(expression, time);
+    // --- Charge shake ---
+    if (expression === 'charge-high') {
+      this._spriteMesh.position.x = (Math.random() - 0.5) * 3;
+      this._spriteMesh.position.y = (Math.random() - 0.5) * 3;
+    } else {
+      this._spriteMesh.position.x = 0;
+      this._spriteMesh.position.y = 0;
+    }
 
-    // --- Helmet ---
-    this._helmetGroup.visible = planetIndex > 0;
-
-    // --- Eye blink ---
+    // --- Blink ---
     this._updateBlink(character, expression);
 
     // --- Afterimage trail ---
-    this._updateAfterimages(character);
+    this._updateAfterimages(character, texKey);
   }
 
   /**
@@ -398,202 +306,104 @@ export class CharacterRenderer {
     }
   }
 
+  /** Map expression to sprite sheet pose name. */
+  _expressionToPose(expression) {
+    switch (expression) {
+      case 'charge-low':
+      case 'charge-mid':
+      case 'charge-high':
+        return 'charging';
+      case 'rising':
+      case 'peak':
+        return 'jumping';
+      case 'falling':
+      case 'sliding':
+        return 'falling';
+      case 'landing':
+        return 'landing';
+      case 'death':
+      case 'victory':
+      case 'idle':
+      default:
+        return 'idle';
+    }
+  }
+
   /**
-   * Update eyes, mouth, and eyebrows to match expression.
+   * Update pupil positions, death/victory overlays based on expression.
    */
   _updateExpression(expression, character, _time) {
-    // Only update if expression changed (except for idle which needs pupil drift)
     const needsUpdate = expression !== this._currentExpression || expression === 'idle';
     if (!needsUpdate && expression !== 'charge-high') return;
     this._currentExpression = expression;
 
-    // Reset all overlays
+    // Reset overlays
     for (const xg of this._deathEyeGroups) xg.visible = false;
     for (const sg of this._starEyeGroups) sg.visible = false;
 
-    // --- Eyes: sclera shape and pupil position ---
-    let scleraScaleY = 1;
     let pupilOffX = 0;
     let pupilOffY = 0;
     let pupilScale = 1;
-    let showNormalEyes = true;
+    let showPupils = true;
 
     switch (expression) {
       case 'death':
-        showNormalEyes = false;
+        showPupils = false;
         for (const xg of this._deathEyeGroups) xg.visible = true;
         break;
       case 'victory':
-        showNormalEyes = false;
+        showPupils = false;
         for (const sg of this._starEyeGroups) sg.visible = true;
         break;
       case 'idle':
-        pupilOffX = (character.pupilDriftX || 0) * 0.4;
-        pupilOffY = (character.pupilDriftY || 0) * 0.4;
+        pupilOffX = (character.pupilDriftX || 0) * 0.3;
+        pupilOffY = (character.pupilDriftY || 0) * 0.3;
         break;
       case 'charge-low':
-        scleraScaleY = 0.75;
         pupilScale = 0.8;
         break;
       case 'charge-mid':
-        scleraScaleY = 0.5;
         pupilScale = 0.6;
         break;
       case 'charge-high':
-        scleraScaleY = 0.35;
         pupilScale = 0.4;
-        // Shake
-        pupilOffX = (Math.random() - 0.5) * 1.5;
-        pupilOffY = (Math.random() - 0.5) * 1.5;
+        pupilOffX = (Math.random() - 0.5) * 1.2;
+        pupilOffY = (Math.random() - 0.5) * 1.2;
         break;
       case 'rising':
-        pupilOffY = 0;
-        pupilOffX = 0;
+        pupilOffY = -0.5;
         break;
       case 'peak':
-        pupilOffY = 0.8;
+        pupilOffY = 0.6;
         break;
       case 'falling':
-        scleraScaleY = 1.15;
         pupilScale = 0.7;
-        pupilOffY = -0.6;
+        pupilOffY = 0.5;
         break;
       case 'sliding':
-        pupilOffX = character._slideVx > 0 ? 0.8 : character._slideVx < 0 ? -0.8 : 0;
+        pupilOffX = character._slideVx > 0 ? 0.6 : character._slideVx < 0 ? -0.6 : 0;
         break;
       case 'landing':
-        scleraScaleY = 0.6;
+        pupilScale = 0.8;
         break;
       default:
         break;
     }
 
-    for (const eye of this._eyeGroups) {
-      eye.sclera.visible = showNormalEyes;
-      eye.pupil.visible = showNormalEyes;
-      if (showNormalEyes) {
-        eye.sclera.scale.set(1, scleraScaleY, 0.5);
-        eye.pupil.position.x = pupilOffX;
-        eye.pupil.position.y = pupilOffY;
-        eye.pupil.scale.setScalar(pupilScale);
+    for (const pupil of this._pupils) {
+      pupil.mesh.visible = showPupils;
+      if (showPupils) {
+        pupil.mesh.position.x = pupil.side * EYE_OFFSET_X + pupilOffX;
+        pupil.mesh.position.y = EYE_OFFSET_Y + pupilOffY;
+        pupil.mesh.scale.setScalar(pupilScale);
       }
-    }
-
-    // --- Mouth ---
-    this._smileMesh.visible = false;
-    this._scaredMesh.visible = false;
-    this._lineMouth.visible = false;
-
-    switch (expression) {
-      case 'idle':
-      case 'peak':
-      case 'victory':
-        this._smileMesh.visible = true;
-        break;
-      case 'falling':
-      case 'death':
-        this._scaredMesh.visible = true;
-        break;
-      case 'charge-low':
-      case 'charge-mid':
-      case 'charge-high':
-      case 'rising':
-      case 'sliding':
-      case 'landing':
-        this._lineMouth.visible = true;
-        break;
-      default:
-        this._smileMesh.visible = true;
-        break;
-    }
-
-    // --- Eyebrows ---
-    const showDetermined = expression === 'rising' || expression === 'charge-high';
-    const showWorried = expression === 'falling' || expression === 'sliding';
-    for (const brow of this._eyebrows) {
-      brow.mesh.visible = showDetermined || showWorried;
-      if (showDetermined) {
-        // Angled inward-down (determined look)
-        brow.mesh.rotation.z = brow.side * 0.3;
-        brow.mesh.position.y = -12;
-      } else if (showWorried) {
-        // Angled inward-up (worried look)
-        brow.mesh.rotation.z = brow.side * -0.3;
-        brow.mesh.position.y = -13;
-      }
-    }
-
-    // --- Charge shake on body ---
-    if (expression === 'charge-high') {
-      this._bodyMesh.position.x = (Math.random() - 0.5) * 3;
-      this._bodyMesh.position.y = (Math.random() - 0.5) * 3;
-      this._outlineMesh.position.x = this._bodyMesh.position.x;
-      this._outlineMesh.position.y = this._bodyMesh.position.y;
-    } else {
-      this._bodyMesh.position.x = 0;
-      this._bodyMesh.position.y = 0;
-      this._outlineMesh.position.x = 0;
-      this._outlineMesh.position.y = 0;
     }
   }
 
   /**
-   * Animate legs based on expression state.
-   */
-  _updateLegs(expression, time) {
-    for (const leg of this._legs) {
-      let yOff = 22;
-      let angle = 0;
-
-      switch (expression) {
-        case 'idle':
-          yOff += Math.sin(time * 2 + leg.side * Math.PI) * 1.5;
-          break;
-        case 'charge-low':
-          yOff -= 2;
-          break;
-        case 'charge-mid':
-          yOff -= 4;
-          break;
-        case 'charge-high':
-          yOff -= 6;
-          break;
-        case 'rising':
-          yOff += 4;
-          break;
-        case 'peak':
-          yOff += 2;
-          angle = leg.side * 0.15;
-          break;
-        case 'falling':
-          yOff += 3;
-          angle = leg.side * Math.sin(time * 8) * 0.3;
-          break;
-        case 'sliding':
-          yOff += 1;
-          angle = leg.side * 0.2;
-          break;
-        case 'landing':
-          yOff -= 2;
-          break;
-        case 'victory':
-          yOff += Math.sin(time * 6 + leg.side * Math.PI) * 3;
-          break;
-        case 'death':
-          angle = leg.side * 0.5;
-          yOff += 5;
-          break;
-        default:
-          break;
-      }
-
-      leg.group.position.y = yOff;
-      leg.group.rotation.z = angle;
-    }
-  }
-
-  /**
-   * Eye blink effect — squash sclera vertically.
+   * Eye blink — hide pupils briefly.
+   * The sprite sheet frame 3 already has closed eyes, so we just need
+   * to force frame 3 and hide pupils during blink.
    */
   _updateBlink(character, expression) {
     if (
@@ -602,36 +412,29 @@ export class CharacterRenderer {
       !character.victoryActive &&
       (expression === 'idle' || expression === 'sliding')
     ) {
+      // Force the blink frame (frame index 2 = third frame with closed eyes)
+      this._frameIndex = 2;
+      const texKey = this._currentHelmet ? this._currentPose + '-helmet' : this._currentPose;
+      const tex = this._textures[texKey];
+      if (tex) tex.offset.x = 2 * 0.25;
+
+      // Hide pupils during blink
       const halfDur = 0.075;
       const bp = character.blinkPhase;
-      // bp counts down from ~0.15 to 0: first half closes, second half opens
-      let blinkScale;
-      if (bp > halfDur) {
-        // Closing: 1 → 0 as bp goes from 0.15 → halfDur
-        blinkScale = (bp - halfDur) / halfDur;
-      } else {
-        // Opening: 0 → 1 as bp goes from halfDur → 0
-        blinkScale = 1 - bp / halfDur;
-      }
-      blinkScale = Math.max(0.05, blinkScale);
-
-      for (const eye of this._eyeGroups) {
-        eye.sclera.scale.y = blinkScale;
-        eye.pupil.visible = blinkScale > 0.2;
-      }
-    } else {
-      // Ensure pupils are visible when not blinking (sclera scale owned by _updateExpression)
-      for (const eye of this._eyeGroups) {
-        eye.pupil.visible = true;
+      const blinkScale = bp > halfDur ? (bp - halfDur) / halfDur : 1 - bp / halfDur;
+      for (const pupil of this._pupils) {
+        pupil.mesh.visible = blinkScale > 0.3;
       }
     }
   }
 
   /**
-   * Update afterimage trail meshes.
+   * Update afterimage trail meshes using sprite texture.
    */
-  _updateAfterimages(character) {
+  _updateAfterimages(character, texKey) {
     const positions = character.afterimagePositions || [];
+    const tex = this._textures[texKey];
+
     for (let i = 0; i < AFTERIMAGE_COUNT; i++) {
       const ai = this._afterimages[i];
       if (i < positions.length) {
@@ -643,6 +446,11 @@ export class CharacterRenderer {
           4 - i * 0.5,
         );
         ai.mesh.scale.set(img.scaleX || 1, img.scaleY || 1, 1);
+        // Use current sprite texture for afterimages
+        if (tex && ai.mat.map !== tex) {
+          ai.mat.map = tex;
+          ai.mat.needsUpdate = true;
+        }
         ai.mat.opacity = img.opacity * 0.35;
       } else {
         ai.mesh.visible = false;
@@ -655,6 +463,13 @@ export class CharacterRenderer {
    * Dispose all GPU resources.
    */
   dispose() {
+    // Dispose textures
+    for (const key of Object.keys(this._textures)) {
+      this._textures[key].dispose();
+    }
+    this._textures = {};
+
+    // Dispose meshes in group
     this.group.traverse((obj) => {
       if (obj.geometry) obj.geometry.dispose();
       if (obj.material) {
@@ -666,10 +481,11 @@ export class CharacterRenderer {
       }
     });
 
-    // Dispose shared afterimage geometry once, then materials
-    if (this._afterGeom) this._afterGeom.dispose();
+    // Dispose afterimage materials
     for (const ai of this._afterimages) {
+      if (ai.mat.map) ai.mat.map = null;
       ai.mat.dispose();
+      ai.mesh.geometry.dispose();
     }
   }
 }
