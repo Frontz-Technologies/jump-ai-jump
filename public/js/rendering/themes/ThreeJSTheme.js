@@ -36,6 +36,12 @@ export class ThreeJSTheme extends ThemeBase {
     this._atmoMesh = null;
     this._atmoMaterial = null;
 
+    // Sky gradient background
+    this._bgCanvas = null;
+    this._bgCtx = null;
+    this._bgTexture = null;
+    this._currentSkyKey = '';
+
     // Theme interface state (mirrors PlanetaryTheme)
     this.stagePalettes = null;
     this._currentBg = '#87CEEB';
@@ -75,7 +81,15 @@ export class ThreeJSTheme extends ThemeBase {
     this._hudLayer = hudLayer;
     this._scene = scene;
 
-    // Procedural character with expressions, helmet, afterimages
+    // Sky gradient background texture
+    this._bgCanvas = document.createElement('canvas');
+    this._bgCanvas.width = 1;
+    this._bgCanvas.height = 256;
+    this._bgCtx = this._bgCanvas.getContext('2d');
+    this._bgTexture = new THREE.CanvasTexture(this._bgCanvas);
+    this._bgTexture.colorSpace = THREE.SRGBColorSpace;
+    this._scene.background = this._bgTexture;
+
     this._characterRenderer = new CharacterRenderer();
     this._characterRenderer.attachTo(worldLayer);
 
@@ -120,6 +134,11 @@ export class ThreeJSTheme extends ThemeBase {
     }
 
     this._ghostMeshes = [];
+
+    if (this._bgTexture) {
+      this._bgTexture.dispose();
+      this._bgTexture = null;
+    }
 
     // Dispose shared GPU resources
     this._boxGeom.dispose();
@@ -169,18 +188,53 @@ export class ThreeJSTheme extends ThemeBase {
     }
   }
 
-  _updateBackground(_w, _h, transition, planetIndex) {
-    if (!this._scene) return;
+  /** Horizon colors per body type — paired with skyColor for gradients. */
+  static HORIZON_COLORS = {
+    earth: '#c8e8ff',
+    earth_like: '#c8e8ff',
+    stratosphere: '#000005',
+    moon: '#1a1a1a',
+    mars: '#8b3a0a',
+    mercury: '#1a1a1a',
+    venus: '#e8c848',
+    volcanic: '#5a1a0a',
+    titan: '#6b4020',
+    hazy: '#6b4020',
+    jupiter: '#a07850',
+    gas_giant: '#a07850',
+    europa: '#001030',
+    pluto: '#0a0a20',
+    icy: '#001030',
+    rocky: '#1a1a1a',
+    barren: '#1a1a1a',
+    exotic: '#1a0030',
+  };
 
-    // Use planet sky color if available
-    if (transition && transition.skyColor) {
-      this._scene.background.set(transition.skyColor);
-    } else if (planetIndex != null) {
-      const planet = PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)];
-      if (planet && planet.skyColor) {
-        this._scene.background.set(planet.skyColor);
-      }
-    }
+  _updateBackground(_w, _h, transition, planetIndex) {
+    if (!this._bgCtx) return;
+
+    const skyColor = transition?.skyColor || this._getSkyColor(planetIndex);
+    if (!skyColor || skyColor === this._currentSkyKey) return;
+    this._currentSkyKey = skyColor;
+
+    const planet = PLANET_CONFIGS[Math.min(planetIndex ?? 0, PLANET_CONFIGS.length - 1)];
+    const body = planet?.body || planet?.bodyType || 'earth';
+    const horizonColor = ThreeJSTheme.HORIZON_COLORS[body] || skyColor;
+
+    const ctx = this._bgCtx;
+    const grad = ctx.createLinearGradient(0, 0, 0, 256);
+    grad.addColorStop(0, skyColor);
+    grad.addColorStop(1, horizonColor);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, 1, 256);
+
+    this._bgTexture.needsUpdate = true;
+  }
+
+  _getSkyColor(planetIndex) {
+    if (planetIndex == null) return '#87CEEB';
+    const planet = PLANET_CONFIGS[Math.min(planetIndex, PLANET_CONFIGS.length - 1)];
+    return planet?.skyColor || '#87CEEB';
   }
 
   _updatePlatforms(visiblePlatforms, personalBestIndex) {
